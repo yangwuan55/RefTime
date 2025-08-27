@@ -1,6 +1,5 @@
 package com.milo.reftime
 
-import com.milo.reftime.sntp.KtorSntpClient
 import com.milo.reftime.time.TimeKeeper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -28,7 +27,7 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
 
   // 核心组件
   private val timeKeeper = TimeKeeper()
-  private val sntpClient = com.milo.reftime.sntp.KtorSntpClient()
+  private val sntpClient = com.milo.reftime.sntp.SntpClient()
 
   // 同步任务
   private var syncJob: Job? = null
