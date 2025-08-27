@@ -1,4 +1,4 @@
-package com.instacart.sample
+package com.milo.sample
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,26 +15,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.instacart.truetime.*
+import com.milo.reftime.*
 import kotlinx.coroutines.launch
 
 /** 现代化示例Activity - 展示新的TrueTime API */
 class SampleActivity : ComponentActivity() {
 
-  private lateinit var trueTime: TrueTime
+  private lateinit var refTime: RefTime
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     // 获取TrueTime实例
-    trueTime = (application as App).trueTime
+    refTime = (application as App).refTime
 
-    setContent { TrueTimeTheme { TrueTimeApp(trueTime = trueTime) } }
+    setContent { TrueTimeTheme { TrueTimeApp(refTime = refTime) } }
   }
 }
 
 @Composable
-fun TrueTimeApp(trueTime: TrueTime) {
+fun TrueTimeApp(refTime: RefTime) {
   val scrollState = rememberScrollState()
 
   Column(
@@ -45,30 +45,30 @@ fun TrueTimeApp(trueTime: TrueTime) {
             text = "TrueTime Kotlin DateTime Demo", style = MaterialTheme.typography.headlineMedium)
 
         // 状态显示卡片
-        TrueTimeStateCard(trueTime = trueTime)
+        TrueTimeStateCard(refTime = refTime)
 
         // 时间显示卡片
-        TrueTimeDisplayCard(trueTime = trueTime)
+        TrueTimeDisplayCard(refTime = refTime)
 
         // 控制按钮
-        TrueTimeControlsCard(trueTime = trueTime)
+        TrueTimeControlsCard(refTime = refTime)
 
         // 调试信息卡片
-        TrueTimeDebugCard(trueTime = trueTime)
+        TrueTimeDebugCard(refTime = refTime)
       }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrueTimeStateCard(trueTime: TrueTime) {
-  val state by trueTime.state.collectAsStateWithLifecycle()
+fun TrueTimeStateCard(refTime: RefTime) {
+  val state by refTime.state.collectAsStateWithLifecycle()
 
   Card {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
       Text(text = "同步状态", style = MaterialTheme.typography.titleMedium)
 
       when (val current = state) {
-        TrueTimeState.Uninitialized -> {
+        RefTimeState.Uninitialized -> {
           Row(
               verticalAlignment = Alignment.CenterVertically,
               horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -79,7 +79,7 @@ fun TrueTimeStateCard(trueTime: TrueTime) {
                 Text("未初始化")
               }
         }
-        is TrueTimeState.Syncing -> {
+        is RefTimeState.Syncing -> {
           Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -93,7 +93,7 @@ fun TrueTimeStateCard(trueTime: TrueTime) {
                 style = MaterialTheme.typography.bodySmall)
           }
         }
-        is TrueTimeState.Available -> {
+        is RefTimeState.Available -> {
           Row(
               verticalAlignment = Alignment.CenterVertically,
               horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -112,7 +112,7 @@ fun TrueTimeStateCard(trueTime: TrueTime) {
                 }
               }
         }
-        is TrueTimeState.Failed -> {
+        is RefTimeState.Failed -> {
           Row(
               verticalAlignment = Alignment.CenterVertically,
               horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -135,10 +135,10 @@ fun TrueTimeStateCard(trueTime: TrueTime) {
 }
 
 @Composable
-fun TrueTimeDisplayCard(trueTime: TrueTime) {
-  val currentTime by trueTime.timeUpdates.collectAsStateWithLifecycle(initialValue = null)
+fun TrueTimeDisplayCard(refTime: RefTime) {
+  val currentTime by refTime.timeUpdates.collectAsStateWithLifecycle(initialValue = null)
   val formattedTime by
-      trueTime.timeUpdatesAsFormatted().collectAsStateWithLifecycle(initialValue = "")
+      refTime.timeUpdatesAsFormatted().collectAsStateWithLifecycle(initialValue = "")
 
   Card {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -170,10 +170,10 @@ fun TrueTimeDisplayCard(trueTime: TrueTime) {
 }
 
 @Composable
-fun TrueTimeControlsCard(trueTime: TrueTime) {
+fun TrueTimeControlsCard(refTime: RefTime) {
   val scope = rememberCoroutineScope()
-  val state by trueTime.state.collectAsStateWithLifecycle()
-  val isSyncing = state is TrueTimeState.Syncing
+  val state by refTime.state.collectAsStateWithLifecycle()
+  val isSyncing = state is RefTimeState.Syncing
 
   Card {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -183,7 +183,7 @@ fun TrueTimeControlsCard(trueTime: TrueTime) {
         Button(
             onClick = {
               scope.launch {
-                trueTime
+                refTime
                     .sync()
                     .onSuccess { println("✅ 同步成功") }
                     .onFailure { error -> println("❌ 同步失败: ${error.message}") }
@@ -202,7 +202,7 @@ fun TrueTimeControlsCard(trueTime: TrueTime) {
             }
 
         OutlinedButton(
-            onClick = { trueTime.cancel() }, enabled = isSyncing, modifier = Modifier.weight(1f)) {
+            onClick = { refTime.cancel() }, enabled = isSyncing, modifier = Modifier.weight(1f)) {
               Text("取消")
             }
       }
@@ -212,7 +212,7 @@ fun TrueTimeControlsCard(trueTime: TrueTime) {
         FilledTonalButton(
             onClick = {
               scope.launch {
-                val time = trueTime.nowSafe()
+                val time = refTime.nowSafe()
                 println("安全时间: $time")
               }
             },
@@ -223,7 +223,7 @@ fun TrueTimeControlsCard(trueTime: TrueTime) {
         FilledTonalButton(
             onClick = {
               scope.launch {
-                val time = trueTime.nowOrNull()
+                val time = refTime.nowOrNull()
                 println("可空时间: $time")
               }
             },
@@ -236,9 +236,9 @@ fun TrueTimeControlsCard(trueTime: TrueTime) {
 }
 
 @Composable
-fun TrueTimeDebugCard(trueTime: TrueTime) {
+fun TrueTimeDebugCard(refTime: RefTime) {
   var showDebug by remember { mutableStateOf(false) }
-  val debugInfo by trueTime.debugInfo().collectAsStateWithLifecycle(initialValue = "")
+  val debugInfo by refTime.debugInfo().collectAsStateWithLifecycle(initialValue = "")
 
   Card {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

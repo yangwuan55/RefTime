@@ -1,4 +1,4 @@
-package com.instacart.truetime.time
+package com.milo.reftime.time
 
 class TrueTimeImplTest {
 

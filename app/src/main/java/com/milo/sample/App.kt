@@ -1,14 +1,14 @@
-package com.instacart.sample
+package com.milo.sample
 
 import android.app.Application
-import com.instacart.truetime.*
+import com.milo.reftime.*
 import kotlin.time.Duration
 
 /** 示例应用 - 展示现代化TrueTime API的使用 */
 class App : Application() {
 
   /** 全局TrueTime实例 - 使用现代化API */
-  val trueTime: TrueTime = TrueTime {
+  val refTime: RefTime = TrueTime {
     // 配置多个可靠的NTP服务器
     ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org", "time.cloudflare.com")
 
@@ -37,7 +37,7 @@ class App : Application() {
     // }
 
     if (BuildConfig.DEBUG) {
-      println("TrueTime App initialized with config: $trueTime")
+      println("TrueTime App initialized with config: $refTime")
     }
   }
 }

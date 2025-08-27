@@ -1,4 +1,4 @@
-package com.instacart.truetime
+package com.milo.reftime
 
 import kotlin.time.Duration
 import kotlinx.coroutines.flow.*
@@ -9,7 +9,7 @@ import kotlinx.datetime.*
 // ==================== 时间格式化扩展 ====================
 
 /** 获取格式化的当前时间 */
-suspend fun TrueTime.formatNow(): String? {
+suspend fun RefTime.formatNow(): String? {
   return nowOrNull()?.let { instant ->
     try {
       instant.toLocalDateTime(TimeZone.currentSystemDefault()).toString()
@@ -20,7 +20,7 @@ suspend fun TrueTime.formatNow(): String? {
 }
 
 /** 获取ISO格式的当前时间 */
-suspend fun TrueTime.nowISO(): String? {
+suspend fun RefTime.nowISO(): String? {
   return nowOrNull()?.let { instant ->
     try {
       instant.toString()
@@ -31,7 +31,7 @@ suspend fun TrueTime.nowISO(): String? {
 }
 
 /** 获取本地日期时间 */
-suspend fun TrueTime.nowLocalDateTime(
+suspend fun RefTime.nowLocalDateTime(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): LocalDateTime? {
   return try {
@@ -42,7 +42,7 @@ suspend fun TrueTime.nowLocalDateTime(
 }
 
 /** 获取本地日期 */
-suspend fun TrueTime.nowLocalDate(
+suspend fun RefTime.nowLocalDate(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): LocalDate? {
   return try {
@@ -53,7 +53,7 @@ suspend fun TrueTime.nowLocalDate(
 }
 
 /** 获取本地时间 */
-suspend fun TrueTime.nowLocalTime(
+suspend fun RefTime.nowLocalTime(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): LocalTime? {
   return try {
@@ -66,22 +66,22 @@ suspend fun TrueTime.nowLocalTime(
 // ==================== 时间比较扩展 ====================
 
 /** 检查当前时间是否在指定时间之前 */
-suspend fun TrueTime.isBefore(other: TrueTimeInstant): Boolean? {
+suspend fun RefTime.isBefore(other: RefTimeInstant): Boolean? {
   return nowOrNull()?.let { it < other }
 }
 
 /** 检查当前时间是否在指定时间之后 */
-suspend fun TrueTime.isAfter(other: TrueTimeInstant): Boolean? {
+suspend fun RefTime.isAfter(other: RefTimeInstant): Boolean? {
   return nowOrNull()?.let { it > other }
 }
 
 /** 检查当前时间是否在指定时间范围内 */
-suspend fun TrueTime.isWithinRange(start: TrueTimeInstant, end: TrueTimeInstant): Boolean? {
+suspend fun RefTime.isWithinRange(start: RefTimeInstant, end: RefTimeInstant): Boolean? {
   return nowOrNull()?.let { current -> current >= start && current <= end }
 }
 
 /** 检查当前时间是否比指定时间早超过指定持续时间 */
-suspend fun TrueTime.isOlderThan(duration: TrueTimeDuration): Boolean? {
+suspend fun RefTime.isOlderThan(duration: RefTimeDuration): Boolean? {
   return nowOrNull()?.let { current ->
     val threshold = Clock.System.now().minus(duration)
     current < threshold
@@ -89,7 +89,7 @@ suspend fun TrueTime.isOlderThan(duration: TrueTimeDuration): Boolean? {
 }
 
 /** 检查当前时间是否比指定时间晚超过指定持续时间 */
-suspend fun TrueTime.isNewerThan(duration: TrueTimeDuration): Boolean? {
+suspend fun RefTime.isNewerThan(duration: RefTimeDuration): Boolean? {
   return nowOrNull()?.let { current ->
     val threshold = Clock.System.now().minus(duration)
     current > threshold
@@ -99,76 +99,76 @@ suspend fun TrueTime.isNewerThan(duration: TrueTimeDuration): Boolean? {
 // ==================== 持续时间计算扩展 ====================
 
 /** 计算到指定时间的持续时间 */
-suspend fun TrueTime.durationUntil(target: TrueTimeInstant): TrueTimeDuration? {
+suspend fun RefTime.durationUntil(target: RefTimeInstant): RefTimeDuration? {
   return nowOrNull()?.let { current -> target.minus(current) }
 }
 
 /** 计算距离现在多长时间前的时间点 */
-suspend fun TrueTime.timeAgo(duration: TrueTimeDuration): TrueTimeInstant? {
+suspend fun RefTime.timeAgo(duration: RefTimeDuration): RefTimeInstant? {
   return nowOrNull()?.minus(duration)
 }
 
 /** 计算距离现在多长时间后的时间点 */
-suspend fun TrueTime.timeFromNow(duration: TrueTimeDuration): TrueTimeInstant? {
+suspend fun RefTime.timeFromNow(duration: RefTimeDuration): RefTimeInstant? {
   return nowOrNull()?.plus(duration)
 }
 
 // ==================== Flow 扩展 ====================
 
 /** 状态流扩展 - 检查是否可用 */
-val TrueTime.isAvailable: Flow<Boolean>
-  get() = state.map { it is TrueTimeState.Available }
+val RefTime.isAvailable: Flow<Boolean>
+  get() = state.map { it is RefTimeState.Available }
 
 /** 状态流扩展 - 检查是否正在同步 */
-val TrueTime.isSyncing: Flow<Boolean>
-  get() = state.map { it is TrueTimeState.Syncing }
+val RefTime.isSyncing: Flow<Boolean>
+  get() = state.map { it is RefTimeState.Syncing }
 
 /** 状态流扩展 - 获取错误流 */
-val TrueTime.errors: Flow<TrueTimeError>
-  get() = state.filterIsInstance<TrueTimeState.Failed>().map { it.error }
+val RefTime.errors: Flow<RefTimeError>
+  get() = state.filterIsInstance<RefTimeState.Failed>().map { it.error }
 
 /** 状态流扩展 - 获取同步进度 */
-val TrueTime.syncProgress: Flow<Float>
-  get() = state.filterIsInstance<TrueTimeState.Syncing>().map { it.progress }
+val RefTime.syncProgress: Flow<Float>
+  get() = state.filterIsInstance<RefTimeState.Syncing>().map { it.progress }
 
 /** 时间更新流扩展 - 转换为本地日期时间 */
-fun TrueTime.timeUpdatesAsLocalDateTime(
+fun RefTime.timeUpdatesAsLocalDateTime(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): Flow<LocalDateTime> = timeUpdates.map { it.toLocalDateTime(timeZone) }
 
 /** 时间更新流扩展 - 转换为格式化字符串 */
-fun TrueTime.timeUpdatesAsFormatted(
+fun RefTime.timeUpdatesAsFormatted(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): Flow<String> = timeUpdates.map { instant -> instant.toLocalDateTime(timeZone).toString() }
 
 // ==================== 便利性扩展 ====================
 
 /** 安全获取时钟偏移的人类可读格式 */
-suspend fun TrueTime.getClockOffsetFormatted(): String {
+suspend fun RefTime.getClockOffsetFormatted(): String {
   return getClockOffset()?.toHumanReadable() ?: "Unknown"
 }
 
 /** 安全获取准确度的人类可读格式 */
-suspend fun TrueTime.getAccuracyFormatted(): String {
+suspend fun RefTime.getAccuracyFormatted(): String {
   return getAccuracy()?.toHumanReadable() ?: "Unknown"
 }
 
 /** 获取状态描述 */
-fun TrueTime.getStateDescription(): Flow<String> =
+fun RefTime.getStateDescription(): Flow<String> =
     state.map { state ->
       when (state) {
-        TrueTimeState.Uninitialized -> "未初始化"
-        is TrueTimeState.Syncing -> "同步中 (${(state.progress * 100).toInt()}%)"
-        is TrueTimeState.Available -> "已同步 (偏移: ${state.clockOffset.toHumanReadable()})"
-        is TrueTimeState.Failed -> "同步失败: ${state.error.message}"
+        RefTimeState.Uninitialized -> "未初始化"
+        is RefTimeState.Syncing -> "同步中 (${(state.progress * 100).toInt()}%)"
+        is RefTimeState.Available -> "已同步 (偏移: ${state.clockOffset.toHumanReadable()})"
+        is RefTimeState.Failed -> "同步失败: ${state.error.message}"
       }
     }
 
 /** 检查缓存是否即将过期 */
-suspend fun TrueTime.isCacheExpiringSoon(
+suspend fun RefTime.isCacheExpiringSoon(
 ): Boolean {
   return when (val currentState = state.value) {
-    is TrueTimeState.Available -> {
+    is RefTimeState.Available -> {
       val elapsed = Clock.System.now().minus(currentState.lastSyncTime)
       elapsed > Duration.parse("PT50M") // 假设缓存有效期1小时，剩余10分钟算即将过期
     }
@@ -179,19 +179,19 @@ suspend fun TrueTime.isCacheExpiringSoon(
 // ==================== 调试扩展 ====================
 
 /** 获取详细的调试信息流 */
-fun TrueTime.debugInfo(): Flow<String> =
+fun RefTime.debugInfo(): Flow<String> =
     combine(state, timeUpdates.onStart { emit(Clock.System.now()) }) { state, currentTime ->
       buildString {
         appendLine("=== TrueTime Debug Info ===")
         appendLine("State: $state")
         appendLine("Current Time: $currentTime")
         when (state) {
-          is TrueTimeState.Available -> {
+          is RefTimeState.Available -> {
             appendLine("Clock Offset: ${state.clockOffset.toHumanReadable()}")
             appendLine("Last Sync: ${state.lastSyncTime}")
             appendLine("Accuracy: ${state.accuracy.toHumanReadable()}")
           }
-          is TrueTimeState.Failed -> {
+          is RefTimeState.Failed -> {
             appendLine("Error: ${state.error}")
           }
           else -> {
@@ -205,7 +205,7 @@ fun TrueTime.debugInfo(): Flow<String> =
 // ==================== Instant 扩展函数 ====================
 
 /** Instant 到人类可读时间距离的转换 */
-fun TrueTimeInstant.toHumanReadableAgo(): String {
+fun RefTimeInstant.toHumanReadableAgo(): String {
   val now = Clock.System.now()
   val duration = now.minus(this)
 

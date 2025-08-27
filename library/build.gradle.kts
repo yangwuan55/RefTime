@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  namespace = "com.instacart.truetime"
+  namespace = "com.milo.reftime"
 
   compileSdk = libs.versions.compileSdk.get().toInt()
 
@@ -25,7 +25,7 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
-  
+
   kotlinOptions {
     jvmTarget = "17"
   }

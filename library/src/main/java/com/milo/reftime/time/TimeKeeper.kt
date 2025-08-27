@@ -1,26 +1,26 @@
-package com.instacart.truetime.time
+package com.milo.reftime.time
 
-import com.instacart.truetime.*
+import com.milo.reftime.*
 import kotlin.time.Duration
 import kotlinx.datetime.Clock
 
 /** 现代化时间管理器 - 完全基于kotlinx-datetime */
-internal class ModernTimeKeeper {
+internal class TimeKeeper {
 
   // 缓存的网络时间
-  private var cachedNetworkTime: TrueTimeInstant? = null
+  private var cachedNetworkTime: RefTimeInstant? = null
 
   // 时钟偏移量
-  private var clockOffset: TrueTimeDuration = Duration.ZERO
+  private var clockOffset: RefTimeDuration = Duration.ZERO
 
   // 准确度
-  private var accuracy: TrueTimeDuration = Duration.ZERO
+  private var accuracy: RefTimeDuration = Duration.ZERO
 
   // 最后同步时的系统时间
-  private var lastSyncSystemTime: TrueTimeInstant? = null
+  private var lastSyncSystemTime: RefTimeInstant? = null
 
   // 缓存有效期 (默认1小时)
-  private val cacheValidDuration: TrueTimeDuration = Duration.parse("PT1H")
+  private val cacheValidDuration: RefTimeDuration = Duration.parse("PT1H")
 
   /** 保存同步结果 */
   fun saveSync(result: SntpResult) {
@@ -35,7 +35,7 @@ internal class ModernTimeKeeper {
    *
    * @return 当前准确时间，如果缓存无效则返回null
    */
-  fun getCurrentTime(): TrueTimeInstant? {
+  fun getCurrentTime(): RefTimeInstant? {
     if (!hasValidCache()) return null
 
     val cachedTime = cachedNetworkTime ?: return null
@@ -61,13 +61,13 @@ internal class ModernTimeKeeper {
   }
 
   /** 获取时钟偏移量 */
-  fun getClockOffset(): TrueTimeDuration = clockOffset
+  fun getClockOffset(): RefTimeDuration = clockOffset
 
   /** 获取准确度 */
-  fun getAccuracy(): TrueTimeDuration = accuracy
+  fun getAccuracy(): RefTimeDuration = accuracy
 
   /** 获取最后同步时间 */
-  fun getLastSyncTime(): TrueTimeInstant? = cachedNetworkTime
+  fun getLastSyncTime(): RefTimeInstant? = cachedNetworkTime
 
   /** 清除缓存 */
   fun clearCache() {
@@ -78,7 +78,7 @@ internal class ModernTimeKeeper {
   }
 
   /** 检查缓存剩余有效时间 */
-  fun getCacheRemainingTime(): TrueTimeDuration? {
+  fun getCacheRemainingTime(): RefTimeDuration? {
     val lastSync = lastSyncSystemTime ?: return null
     val currentSystemTime = Clock.System.now()
     val elapsed = currentSystemTime.minus(lastSync)

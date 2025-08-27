@@ -1,6 +1,6 @@
-package com.instacart.truetime.sntp
+package com.milo.reftime.sntp
 
-import com.instacart.truetime.*
+import com.milo.reftime.*
 import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -12,9 +12,9 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Clock
 
 /** 现代化SNTP客户端 - 完全基于kotlinx-datetime和协程 */
-class ModernSntpClient {
+class SntpClient {
 
-  companion object {
+  companion object Companion {
     // 公共NTP常量
     const val NTP_PORT = 123
     const val NTP_DEFAULT_TIMEOUT_SEC = 30
@@ -44,29 +44,29 @@ class ModernSntpClient {
    */
   suspend fun requestTime(
       server: String,
-      timeout: TrueTimeDuration = Duration.parse("PT30S")
-  ): com.instacart.truetime.SntpResult =
+      timeout: RefTimeDuration = Duration.parse("PT30S")
+  ): com.milo.reftime.SntpResult =
       withContext(Dispatchers.IO) {
         val address =
             try {
               InetAddress.getByName(server)
             } catch (e: Exception) {
-              throw TrueTimeError.InvalidResponse(
+              throw RefTimeError.InvalidResponse(
                   server, "Failed to resolve hostname: ${e.message}")
             }
 
         try {
           withTimeout(timeout) { performSntpRequest(address) }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-          throw TrueTimeError.ServerTimeout(server, timeout)
+          throw RefTimeError.ServerTimeout(server, timeout)
         } catch (e: IOException) {
-          throw TrueTimeError.InvalidResponse(server, "Network error: ${e.message}")
+          throw RefTimeError.InvalidResponse(server, "Network error: ${e.message}")
         } catch (e: Exception) {
-          throw TrueTimeError.InvalidResponse(server, "Request failed: ${e.message}")
+          throw RefTimeError.InvalidResponse(server, "Request failed: ${e.message}")
         }
       }
 
-  private suspend fun performSntpRequest(address: InetAddress): com.instacart.truetime.SntpResult {
+  private suspend fun performSntpRequest(address: InetAddress): com.milo.reftime.SntpResult {
     var socket: DatagramSocket? = null
 
     try {
@@ -103,10 +103,10 @@ class ModernSntpClient {
   }
 
   private fun parseNtpResponse(
-      buffer: ByteArray,
-      requestTime: TrueTimeInstant,
-      responseTime: TrueTimeInstant
-  ): com.instacart.truetime.SntpResult {
+    buffer: ByteArray,
+    requestTime: RefTimeInstant,
+    responseTime: RefTimeInstant
+  ): com.milo.reftime.SntpResult {
 
     // 提取时间戳
     val originateTime = readTimeStamp(buffer, INDEX_ORIGINATE_TIME) // T0
@@ -118,9 +118,9 @@ class ModernSntpClient {
     validateNtpResponse(buffer)
 
     // NTP算法计算
-    val T0 = TrueTimeInstant.fromEpochMilliseconds(originateTime)
-    val T1 = TrueTimeInstant.fromEpochMilliseconds(receiveTime)
-    val T2 = TrueTimeInstant.fromEpochMilliseconds(transmitTime)
+    val T0 = RefTimeInstant.fromEpochMilliseconds(originateTime)
+    val T1 = RefTimeInstant.fromEpochMilliseconds(receiveTime)
+    val T2 = RefTimeInstant.fromEpochMilliseconds(transmitTime)
     val T3 = responseTime
 
     // 计算时钟偏移: ((T1 - T0) + (T2 - T3)) / 2
@@ -137,7 +137,7 @@ class ModernSntpClient {
     // 估算准确度（使用往返延迟的一半作为不确定性）
     val accuracy = roundTripDelay / 2
 
-    return com.instacart.truetime.SntpResult(
+    return com.milo.reftime.SntpResult(
         networkTime = networkTime,
         clockOffset = clockOffset,
         roundTripDelay = roundTripDelay,
@@ -148,19 +148,19 @@ class ModernSntpClient {
     // 检查模式
     val mode = (buffer[0].toInt() and 0x7).toByte()
     if (mode != 4.toByte() && mode != 5.toByte()) {
-      throw TrueTimeError.InvalidResponse("unknown", "Untrusted mode value: $mode")
+      throw RefTimeError.InvalidResponse("unknown", "Untrusted mode value: $mode")
     }
 
     // 检查stratum
     val stratum = buffer[1].toInt() and 0xff
     if (stratum < 1 || stratum > 15) {
-      throw TrueTimeError.InvalidResponse("unknown", "Untrusted stratum value: $stratum")
+      throw RefTimeError.InvalidResponse("unknown", "Untrusted stratum value: $stratum")
     }
 
     // 检查leap indicator
     val leap = ((buffer[0].toInt() shr 6) and 0x3).toByte()
     if (leap == 3.toByte()) {
-      throw TrueTimeError.InvalidResponse("unknown", "Unsynchronized server")
+      throw RefTimeError.InvalidResponse("unknown", "Unsynchronized server")
     }
   }
 
@@ -172,7 +172,7 @@ class ModernSntpClient {
     // 从毫秒(1970年起)转换为NTP时间戳(1900年起，秒.秒的分数)
     val secondsSince1970 = time / 1000L
     val secondsSince1900 = secondsSince1970 + OFFSET_1900_TO_1970
-    
+
     // NTP的分数部分使用2^32作为基数
     val millisecondsRemainder = time % 1000L
     val fraction = (millisecondsRemainder * 0x100000000L) / 1000L
@@ -206,7 +206,7 @@ class ModernSntpClient {
     // 从NTP时间戳转换为毫秒（1970年起）
     val secondsSince1970 = secondsSince1900 - OFFSET_1900_TO_1970
     val milliseconds = (secondsSince1970 * 1000L) + ((fraction * 1000L) ushr 32)
-    
+
     // 验证时间合理性，返回原始值不做极端值调整
     return if (secondsSince1970 < 0 || secondsSince1970 > 4102444800L) {
       Clock.System.now().toEpochMilliseconds() // 无效时间使用系统时间

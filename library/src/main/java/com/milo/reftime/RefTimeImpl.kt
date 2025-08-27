@@ -1,14 +1,14 @@
-package com.instacart.truetime
+package com.milo.reftime
 
-import com.instacart.truetime.sntp.ModernSntpClient
-import com.instacart.truetime.time.ModernTimeKeeper
+import com.milo.reftime.sntp.SntpClient
+import com.milo.reftime.time.TimeKeeper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 
 /** KotlinDateTime TrueTime实现 - 完全基于kotlinx-datetime的现代化实现 */
-class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
+class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
 
   // 协程作用域
   private val scope =
@@ -18,30 +18,30 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
               CoroutineName("TrueTime-${System.currentTimeMillis()}"))
 
   // 状态管理
-  private val _state = MutableStateFlow<TrueTimeState>(TrueTimeState.Uninitialized)
-  override val state: StateFlow<TrueTimeState> = _state.asStateFlow()
+  private val _state = MutableStateFlow<RefTimeState>(RefTimeState.Uninitialized)
+  override val state: StateFlow<RefTimeState> = _state.asStateFlow()
 
   // 时间更新流
   private val _timeUpdates =
-      MutableSharedFlow<TrueTimeInstant>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-  override val timeUpdates: Flow<TrueTimeInstant> = _timeUpdates.asSharedFlow()
+      MutableSharedFlow<RefTimeInstant>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+  override val timeUpdates: Flow<RefTimeInstant> = _timeUpdates.asSharedFlow()
 
   // 核心组件
-  private val timeKeeper = ModernTimeKeeper()
-  private val sntpClient = ModernSntpClient()
+  private val timeKeeper = TimeKeeper()
+  private val sntpClient = SntpClient()
 
   // 同步任务
   private var syncJob: Job? = null
 
-  override suspend fun now(): TrueTimeInstant {
-    return nowOrNull() ?: throw TrueTimeError.NotSynced
+  override suspend fun now(): RefTimeInstant {
+    return nowOrNull() ?: throw RefTimeError.NotSynced
   }
 
-  override suspend fun nowOrNull(): TrueTimeInstant? {
+  override suspend fun nowOrNull(): RefTimeInstant? {
     return timeKeeper.getCurrentTime()
   }
 
-  override suspend fun nowSafe(): TrueTimeInstant {
+  override suspend fun nowSafe(): RefTimeInstant {
     return nowOrNull() ?: Clock.System.now()
   }
 
@@ -59,22 +59,22 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
 
           // 检查最终状态
           when (val currentState = _state.value) {
-            is TrueTimeState.Available -> Result.success(Unit)
-            is TrueTimeState.Failed -> Result.failure(currentState.error)
-            else -> Result.failure(TrueTimeError.NotSynced)
+            is RefTimeState.Available -> Result.success(Unit)
+            is RefTimeState.Failed -> Result.failure(currentState.error)
+            else -> Result.failure(RefTimeError.NotSynced)
           }
         } catch (e: CancellationException) {
-          Result.failure(TrueTimeError.NetworkUnavailable)
+          Result.failure(RefTimeError.NetworkUnavailable)
         }
       }
 
   private suspend fun performSync() {
     try {
-      _state.emit(TrueTimeState.Syncing(0f))
+      _state.emit(RefTimeState.Syncing(0f))
 
       val servers = config.ntpHosts
       if (servers.isEmpty()) {
-        throw TrueTimeError.InvalidResponse("none", "No NTP servers configured")
+        throw RefTimeError.InvalidResponse("none", "No NTP servers configured")
       }
 
       val errors = mutableMapOf<String, Exception>()
@@ -83,7 +83,7 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
       servers.forEachIndexed { index, server ->
         try {
           val progress = index.toFloat() / servers.size
-          _state.emit(TrueTimeState.Syncing(progress))
+          _state.emit(RefTimeState.Syncing(progress))
 
           if (config.debug) {
             println("TrueTime: Attempting sync with server: $server")
@@ -97,7 +97,7 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
 
           // 更新状态
           val successState =
-              TrueTimeState.Available(
+              RefTimeState.Available(
                   clockOffset = result.clockOffset,
                   lastSyncTime = result.networkTime,
                   accuracy = result.accuracy)
@@ -126,24 +126,24 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
       }
 
       // 所有服务器都失败了
-      val error = TrueTimeError.AllServersFailed(errors)
-      _state.emit(TrueTimeState.Failed(error))
+      val error = RefTimeError.AllServersFailed(errors)
+      _state.emit(RefTimeState.Failed(error))
     } catch (e: CancellationException) {
       // 同步被取消
       throw e
     } catch (e: Exception) {
       // 其他意外错误
-      val error = TrueTimeError.InvalidResponse("unknown", e.message ?: "Sync failed")
-      _state.emit(TrueTimeState.Failed(error))
+      val error = RefTimeError.InvalidResponse("unknown", e.message ?: "Sync failed")
+      _state.emit(RefTimeState.Failed(error))
     }
   }
 
   override fun cancel() {
     syncJob?.cancel()
-    _state.value = TrueTimeState.Uninitialized
+    _state.value = RefTimeState.Uninitialized
   }
 
-  override suspend fun durationSince(since: TrueTimeInstant): TrueTimeDuration? {
+  override suspend fun durationSince(since: RefTimeInstant): RefTimeDuration? {
     return nowOrNull()?.minus(since)
   }
 
@@ -155,11 +155,11 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
     return timeKeeper.hasValidCache()
   }
 
-  override suspend fun getClockOffset(): TrueTimeDuration? {
+  override suspend fun getClockOffset(): RefTimeDuration? {
     return if (hasSynced()) timeKeeper.getClockOffset() else null
   }
 
-  override suspend fun getAccuracy(): TrueTimeDuration? {
+  override suspend fun getAccuracy(): RefTimeDuration? {
     return if (hasSynced()) timeKeeper.getAccuracy() else null
   }
 
@@ -181,13 +181,13 @@ class KotlinDateTimeTrueTime(private val config: TrueTimeConfig) : TrueTime {
 
   override fun toString(): String {
     return when (val current = _state.value) {
-      TrueTimeState.Uninitialized -> "TrueTime[Uninitialized]"
-      is TrueTimeState.Syncing -> "TrueTime[Syncing(${(current.progress * 100).toInt()}%)]"
-      is TrueTimeState.Available -> {
+      RefTimeState.Uninitialized -> "TrueTime[Uninitialized]"
+      is RefTimeState.Syncing -> "TrueTime[Syncing(${(current.progress * 100).toInt()}%)]"
+      is RefTimeState.Available -> {
         val offset = current.clockOffset.toHumanReadable()
         "TrueTime[Available(offset=$offset)]"
       }
-      is TrueTimeState.Failed -> "TrueTime[Failed(${current.error.message})]"
+      is RefTimeState.Failed -> "TrueTime[Failed(${current.error.message})]"
     }
   }
 }

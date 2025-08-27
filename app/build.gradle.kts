@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-  namespace = "com.instacart.sample"
+  namespace = "com.milo.sample"
 
   compileSdk = 34
 
@@ -30,7 +30,7 @@ android {
     compose = true
     buildConfig = true
   }
-  
+
   composeOptions {
     kotlinCompilerExtensionVersion = "1.5.3"
   }
@@ -39,7 +39,7 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
-  
+
   kotlinOptions {
     jvmTarget = "17"
   }
@@ -47,30 +47,30 @@ android {
 
 dependencies {
   implementation(project(":library"))
-  
+
   // Compose BOM
   implementation(platform("androidx.compose:compose-bom:2023.10.01"))
-  
+
   // Compose Core
   implementation("androidx.compose.ui:ui")
   implementation("androidx.compose.ui:ui-tooling-preview")
   implementation("androidx.compose.material3:material3")
   implementation("androidx.compose.material:material-icons-extended")
-  
+
   // Activity Compose
   implementation("androidx.activity:activity-compose:1.7.2")
-  
+
   // Lifecycle
   implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
   implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
-  
+
   // Kotlin
   implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.10")
-  
+
   // AndroidX Core
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-  
+
   // Debug tools
   debugImplementation("androidx.compose.ui:ui-tooling")
   debugImplementation("androidx.compose.ui:ui-test-manifest")

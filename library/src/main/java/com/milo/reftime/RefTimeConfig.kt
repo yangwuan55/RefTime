@@ -1,4 +1,4 @@
-package com.instacart.truetime
+package com.milo.reftime
 
 import kotlin.time.Duration
 
@@ -13,22 +13,22 @@ class TrueTimeConfig internal constructor() {
   var ntpHosts: List<String> = listOf("time.google.com", "time.apple.com", "pool.ntp.org")
 
   /** 连接超时时间 */
-  var connectionTimeout: TrueTimeDuration = Duration.parse("PT30S")
+  var connectionTimeout: RefTimeDuration = Duration.parse("PT30S")
 
   /** 最大重试次数 */
   var maxRetries: Int = 3
 
   /** 基础重试延迟 */
-  var baseRetryDelay: TrueTimeDuration = Duration.parse("PT1S")
+  var baseRetryDelay: RefTimeDuration = Duration.parse("PT1S")
 
   /** 最大重试延迟 */
-  var maxRetryDelay: TrueTimeDuration = Duration.parse("PT30S")
+  var maxRetryDelay: RefTimeDuration = Duration.parse("PT30S")
 
   /** 启用调试日志 */
   var debug: Boolean = false
 
   /** 缓存有效期 */
-  var cacheValidDuration: TrueTimeDuration = Duration.parse("PT1H")
+  var cacheValidDuration: RefTimeDuration = Duration.parse("PT1H")
 
   /** 设置NTP服务器主机（变参数） */
   fun ntpHosts(vararg hosts: String) {
@@ -46,7 +46,7 @@ class TrueTimeConfig internal constructor() {
   }
 
   /** 设置超时时间 */
-  fun timeout(duration: TrueTimeDuration) {
+  fun timeout(duration: RefTimeDuration) {
     this.connectionTimeout = duration
   }
 
@@ -56,7 +56,7 @@ class TrueTimeConfig internal constructor() {
   }
 
   /** 设置重试延迟配置 */
-  fun retryDelay(base: TrueTimeDuration, max: TrueTimeDuration = Duration.parse("PT30S")) {
+  fun retryDelay(base: RefTimeDuration, max: RefTimeDuration = Duration.parse("PT30S")) {
     this.baseRetryDelay = base
     this.maxRetryDelay = max
   }
@@ -67,7 +67,7 @@ class TrueTimeConfig internal constructor() {
   }
 
   /** 设置缓存有效期 */
-  fun cacheValid(duration: TrueTimeDuration) {
+  fun cacheValid(duration: RefTimeDuration) {
     this.cacheValidDuration = duration
   }
 
@@ -83,13 +83,13 @@ class TrueTimeConfig internal constructor() {
 }
 
 /** DSL构建函数 - 创建TrueTime实例 */
-fun TrueTime(config: TrueTimeConfig.() -> Unit = {}): TrueTime {
+fun TrueTime(config: TrueTimeConfig.() -> Unit = {}): RefTime {
   val configuration = TrueTimeConfig().apply(config)
-  return KotlinDateTimeTrueTime(configuration)
+  return RefTimeImpl(configuration)
 }
 
 /** 预定义配置 - 默认配置 */
-fun TrueTime.Companion.default(): TrueTime = TrueTime {
+fun RefTime.Companion.default(): RefTime = TrueTime {
   ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org")
   timeout(Duration.parse("PT30S"))
   retries(3)
@@ -97,7 +97,7 @@ fun TrueTime.Companion.default(): TrueTime = TrueTime {
 }
 
 /** 预定义配置 - 快速配置（短超时） */
-fun TrueTime.Companion.fast(): TrueTime = TrueTime {
+fun RefTime.Companion.fast(): RefTime = TrueTime {
   host("time.google.com")
   timeout(Duration.parse("PT10S"))
   retries(1)
@@ -105,7 +105,7 @@ fun TrueTime.Companion.fast(): TrueTime = TrueTime {
 }
 
 /** 预定义配置 - 可靠配置（多服务器、长超时） */
-fun TrueTime.Companion.reliable(): TrueTime = TrueTime {
+fun RefTime.Companion.reliable(): RefTime = TrueTime {
   ntpHosts(
       "time.google.com", "time.apple.com", "pool.ntp.org", "time.nist.gov", "time.cloudflare.com")
   timeout(Duration.parse("PT60S"))
@@ -114,7 +114,7 @@ fun TrueTime.Companion.reliable(): TrueTime = TrueTime {
 }
 
 /** 预定义配置 - 调试配置 */
-fun TrueTime.Companion.debug(): TrueTime = TrueTime {
+fun RefTime.Companion.debug(): RefTime = TrueTime {
   ntpHosts("time.google.com", "time.apple.com")
   timeout(Duration.parse("PT30S"))
   retries(3)

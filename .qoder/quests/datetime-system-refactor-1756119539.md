@@ -32,10 +32,10 @@ graph TB
     C --> E[SNTP Client]
     D --> F[kotlinx.datetime.Instant]
     E --> G[kotlin.time.Duration]
-    
+
     H[StateFlow] --> A
     I[Flow Events] --> A
-    
+
     J[Configuration DSL] --> B
 ```
 
@@ -105,43 +105,43 @@ interface TrueTime {
      * 状态流 - 实时反映同步状态
      */
     val state: StateFlow<TrueTimeState>
-    
+
     /**
      * 时间更新事件流 - 仅在获取到新时间时发射
      */
     val timeUpdates: Flow<TrueTimeInstant>
-    
+
     /**
      * 获取当前准确时间
      * @throws TrueTimeError.NotSynced 如果未同步
      */
     suspend fun now(): TrueTimeInstant
-    
+
     /**
      * 安全获取时间，失败时返回null
      */
     suspend fun nowOrNull(): TrueTimeInstant?
-    
+
     /**
      * 获取时间，未同步时回退到系统时间
      */
     suspend fun nowSafe(): TrueTimeInstant
-    
+
     /**
      * 执行时间同步
      */
     suspend fun sync(): Result<Unit>
-    
+
     /**
      * 取消当前同步操作
      */
     fun cancel()
-    
+
     /**
      * 计算从指定时间到现在的持续时间
      */
     suspend fun durationSince(since: TrueTimeInstant): TrueTimeDuration?
-    
+
     /**
      * 获取Unix时间戳（毫秒）
      */
@@ -159,82 +159,82 @@ import kotlinx.datetime.Clock
 class KotlinDateTimeTrueTime(
     private val config: TrueTimeConfig
 ) : TrueTime {
-    
+
     private val scope = CoroutineScope(
-        Dispatchers.IO + SupervisorJob() + 
+        Dispatchers.IO + SupervisorJob() +
         CoroutineName("TrueTime-${System.currentTimeMillis()}")
     )
-    
+
     private val _state = MutableStateFlow<TrueTimeState>(TrueTimeState.Uninitialized)
     override val state: StateFlow<TrueTimeState> = _state.asStateFlow()
-    
+
     private val _timeUpdates = MutableSharedFlow<TrueTimeInstant>(
         replay = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     override val timeUpdates: Flow<TrueTimeInstant> = _timeUpdates.asSharedFlow()
-    
+
     private val timeKeeper = KotlinTimeKeeper()
     private val sntpClient = ModernSntpClient()
-    
+
     private var syncJob: Job? = null
-    
+
     override suspend fun now(): TrueTimeInstant {
         return nowOrNull() ?: throw TrueTimeError.NotSynced
     }
-    
+
     override suspend fun nowOrNull(): TrueTimeInstant? {
         return timeKeeper.getCurrentTime()
     }
-    
+
     override suspend fun nowSafe(): TrueTimeInstant {
         return nowOrNull() ?: Clock.System.now()
     }
-    
+
     override suspend fun sync(): Result<Unit> = withContext(scope.coroutineContext) {
         syncJob?.cancel()
         syncJob = launch { performSync() }
         syncJob!!.join()
-        
+
         when (val currentState = _state.value) {
             is TrueTimeState.Available -> Result.success(Unit)
             is TrueTimeState.Failed -> Result.failure(currentState.error)
             else -> Result.failure(TrueTimeError.NotSynced)
         }
     }
-    
+
     private suspend fun performSync() {
         try {
             _state.emit(TrueTimeState.Syncing(0f))
-            
+
             val servers = config.ntpHosts
             var lastError: Exception? = null
-            
+
             servers.forEachIndexed { index, server ->
                 try {
                     _state.emit(TrueTimeState.Syncing(index.toFloat() / servers.size))
-                    
+
                     val result = sntpClient.requestTime(
                         server = server,
                         timeout = config.connectionTimeout
                     )
-                    
+
                     val networkTime = result.networkTime
                     val clockOffset = result.clockOffset
                     val accuracy = result.accuracy
-                    
+
                     timeKeeper.saveSync(networkTime, clockOffset, accuracy)
-                    
+
                     val successState = TrueTimeState.Available(
                         clockOffset = clockOffset,
                         lastSyncTime = networkTime,
                         accuracy = accuracy
                     )
-                    
+
                     _state.emit(successState)
                     _timeUpdates.emit(networkTime)
                     return
-                    
+
                 } catch (e: Exception) {
                     lastError = e
                     if (config.debug) {
@@ -242,19 +242,19 @@ class KotlinDateTimeTrueTime(
                     }
                 }
             }
-            
+
             // 所有服务器都失败
             val error = when (lastError) {
-                is java.net.SocketTimeoutException -> 
+                is java.net.SocketTimeoutException ->
                     TrueTimeError.ServerTimeout(servers.last(), config.connectionTimeout)
-                is java.net.UnknownHostException -> 
+                is java.net.UnknownHostException ->
                     TrueTimeError.NetworkUnavailable
-                else -> 
+                else ->
                     TrueTimeError.InvalidResponse(servers.last(), lastError?.message ?: "Unknown error")
             }
-            
+
             _state.emit(TrueTimeState.Failed(error))
-            
+
         } catch (e: CancellationException) {
             // 同步被取消
             throw e
@@ -262,19 +262,19 @@ class KotlinDateTimeTrueTime(
             _state.emit(TrueTimeState.Failed(TrueTimeError.InvalidResponse("unknown", e.message ?: "Sync failed")))
         }
     }
-    
+
     override fun cancel() {
         syncJob?.cancel()
     }
-    
+
     override suspend fun durationSince(since: TrueTimeInstant): TrueTimeDuration? {
         return nowOrNull()?.minus(since)
     }
-    
+
     override suspend fun nowMillis(): Long? {
         return nowOrNull()?.toEpochMilliseconds()
     }
-    
+
     // 清理资源
     internal fun close() {
         scope.cancel()
@@ -292,22 +292,22 @@ internal class KotlinTimeKeeper {
     private var clockOffset: TrueTimeDuration = TrueTimeDuration.ZERO
     private var accuracy: TrueTimeDuration = TrueTimeDuration.ZERO
     private var lastSyncSystemTime: TrueTimeInstant? = null
-    
+
     private val cacheValidDuration = TrueTimeDuration.parse("PT1H") // 1小时
-    
+
     suspend fun getCurrentTime(): TrueTimeInstant? {
         if (!hasValidCache()) return null
-        
+
         val currentSystemTime = Clock.System.now()
         val lastSync = lastSyncSystemTime ?: return null
         val systemElapsed = currentSystemTime.minus(lastSync)
-        
+
         val cachedTime = cachedNetworkTime ?: return null
         return cachedTime.plus(systemElapsed)
     }
-    
+
     fun saveSync(
-        networkTime: TrueTimeInstant, 
+        networkTime: TrueTimeInstant,
         offset: TrueTimeDuration,
         accuracy: TrueTimeDuration
     ) {
@@ -316,13 +316,13 @@ internal class KotlinTimeKeeper {
         this.accuracy = accuracy
         lastSyncSystemTime = Clock.System.now()
     }
-    
+
     private fun hasValidCache(): Boolean {
         val lastSync = lastSyncSystemTime ?: return false
         val elapsed = Clock.System.now().minus(lastSync)
         return elapsed < cacheValidDuration
     }
-    
+
     fun getClockOffset(): TrueTimeDuration = clockOffset
     fun getAccuracy(): TrueTimeDuration = accuracy
     fun isTimeValid(): Boolean = hasValidCache()
@@ -345,15 +345,15 @@ class TrueTimeConfig internal constructor() {
     var syncInterval: TrueTimeDuration = TrueTimeDuration.parse("PT1H")
     var debug: Boolean = false
     var cacheValidDuration: TrueTimeDuration = TrueTimeDuration.parse("PT1H")
-    
+
     fun ntpHosts(vararg hosts: String) {
         this.ntpHosts = hosts.toList()
     }
-    
+
     fun timeout(duration: TrueTimeDuration) {
         this.connectionTimeout = duration
     }
-    
+
     fun retries(count: Int) {
         this.maxRetries = count
     }
@@ -382,21 +382,21 @@ companion object TrueTime
 #### 基本使用
 ```kotlin
 class ModernActivity : ComponentActivity() {
-    
+
     private val trueTime = TrueTime {
         ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org")
         timeout(30.seconds)
         retries(3)
         debug = BuildConfig.DEBUG
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         setContent {
             TrueTimeApp(trueTime = trueTime)
         }
-        
+
         // 初始化时同步
         lifecycleScope.launch {
             trueTime.sync().onSuccess {
@@ -421,12 +421,12 @@ fun TrueTimeApp(trueTime: TrueTime) {
                 trueTime = trueTime,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             TrueTimeControls(
                 trueTime = trueTime,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             TrueTimeDebugInfo(
                 trueTime = trueTime,
                 modifier = Modifier.fillMaxWidth()
@@ -460,7 +460,7 @@ fun TrueTimeDisplay(
     val state by rememberTrueTimeState(trueTime)
     val currentTime by trueTime.timeUpdates
         .collectAsStateWithLifecycle(initialValue = null)
-    
+
     Card(modifier = modifier) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -474,7 +474,7 @@ fun TrueTimeDisplay(
                     )
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
-                
+
                 is TrueTimeState.Syncing -> {
                     Text(
                         text = "正在同步时间...",
@@ -485,7 +485,7 @@ fun TrueTimeDisplay(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                
+
                 is TrueTimeState.Available -> {
                     currentTime?.let { time ->
                         Text(
@@ -493,25 +493,25 @@ fun TrueTimeDisplay(
                             style = MaterialTheme.typography.headlineSmall
                         )
                     }
-                    
+
                     Text(
                         text = "时钟偏移: ${current.clockOffset.toHumanReadable()}",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    
+
                     Text(
                         text = "上次同步: ${current.lastSyncTime.formatForDisplay()}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                
+
                 is TrueTimeState.Failed -> {
                     Text(
                         text = "同步失败",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
-                    
+
                     Text(
                         text = current.error.message ?: "未知错误",
                         style = MaterialTheme.typography.bodySmall
@@ -529,7 +529,7 @@ fun TrueTimeControls(
 ) {
     val scope = rememberCoroutineScope()
     val state by rememberTrueTimeState(trueTime)
-    
+
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -544,7 +544,7 @@ fun TrueTimeControls(
         ) {
             Text("同步时间")
         }
-        
+
         if (state is TrueTimeState.Syncing) {
             OutlinedButton(
                 onClick = { trueTime.cancel() }
@@ -566,7 +566,7 @@ fun TrueTimeDebugInfo(
             delay(1000)
         }
     }
-    
+
     Card(modifier = modifier) {
         Text(
             text = debugInfo,
@@ -588,7 +588,7 @@ sequenceDiagram
     participant TK as KotlinTimeKeeper
     participant SNTP as ModernSntpClient
     participant Server as NTP服务器
-    
+
     App->>TT: 观察 state.collectAsState()
     App->>TT: sync()
     TT->>TT: _state.emit(Syncing)
@@ -602,9 +602,9 @@ sequenceDiagram
     TT->>TT: _timeUpdates.emit(time)
     TT-->>App: StateFlow 更新
     TT-->>App: Flow 事件
-    
+
     Note over App: UI 自动重组
-    
+
     App->>TT: now()
     TT->>TK: getCurrentTime()
     TK-->>TT: 计算当前时间
@@ -623,12 +623,12 @@ stateDiagram-v2
     Available --> [*]: cancel() / close()
     Failed --> [*]: cancel() / close()
     Syncing --> [*]: cancel()
-    
+
     note right of Available
         时间有效期1小时
         超时可重新同步
     end note
-    
+
     note right of Syncing
         实时进度反馈
         可取消操作
@@ -640,10 +640,10 @@ stateDiagram-v2
 graph LR
     A[StateFlow&lt;TrueTimeState&gt;] --> B[状态更新]
     C[SharedFlow&lt;TrueTimeInstant&gt;] --> D[时间事件]
-    
+
     B --> E[Compose UI 重组]
     D --> F[时间显示更新]
-    
+
     G[扩展Flow] --> H[availableStates()]
     G --> I[errorStates()]
     G --> J[stateChanges()]
@@ -670,16 +670,16 @@ graph LR
 // library/build.gradle.kts
 dependencies {
     // 移除所有旧的时间API依赖
-    
+
     // 添加现代化依赖
     api("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    
+
     // Compose 支持
     implementation("androidx.compose.runtime:runtime:1.5.4")
     implementation("androidx.lifecycle:lifecycle-compose:2.7.0")
-    
+
     // 测试依赖
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.mockk:mockk:1.13.8")
@@ -727,7 +727,7 @@ trueTime.state.collect { state ->
 ❗ **重要**: 这是一个完全的破坏性重构
 
 - ❌ **删除**: `TrueTimeImpl` 类
-- ❌ **删除**: `TrueTimeParameters` 类  
+- ❌ **删除**: `TrueTimeParameters` 类
 - ❌ **删除**: 所有 `java.util.Date` API
 - ❌ **删除**: 所有 `java.time.*` API
 - ❌ **删除**: 同步阻塞调用
@@ -765,67 +765,67 @@ trueTime.state.collect { state ->
 
 ```kotlin
 class TrueTimeTest {
-    
+
     @Test
     fun `时间计算准确性测试`() {
         val baseTime = Instant.parse("2024-01-15T12:00:00Z")
         val duration = 30.minutes
-        
+
         val result = baseTime.plus(duration)
         val expected = Instant.parse("2024-01-15T12:30:00Z")
-        
+
         assertEquals(expected, result)
     }
-    
+
     @Test
     fun `状态流转测试`() = runTest {
-        val trueTime = TrueTime { 
+        val trueTime = TrueTime {
             ntpHosts("time.google.com")
             debug = true
         }
-        
+
         trueTime.state.test {
             // 验证初始状态
             assertEquals(TrueTimeState.Uninitialized, awaitItem())
-            
+
             // 触发同步
             trueTime.sync()
-            
+
             // 验证状态流转
             val syncingState = awaitItem()
             assertTrue(syncingState is TrueTimeState.Syncing)
-            
+
             val finalState = awaitItem()
             assertTrue(finalState is TrueTimeState.Available)
         }
     }
-    
+
     @Test
     fun `时间缓存测试`() = runTest {
         val timeKeeper = KotlinTimeKeeper()
         val networkTime = Clock.System.now()
         val offset = 100.milliseconds
         val accuracy = 50.milliseconds
-        
+
         timeKeeper.saveSync(networkTime, offset, accuracy)
-        
+
         assertTrue(timeKeeper.isTimeValid())
-        
+
         val retrievedTime = timeKeeper.getCurrentTime()
         assertNotNull(retrievedTime)
-        
+
         // 验证时间计算精度
         val timeDiff = (retrievedTime!! - networkTime).absoluteValue
         assertTrue(timeDiff < 10.milliseconds)
     }
-    
+
     @Test
     fun `Flow扩展函数测试`() = runTest {
         val trueTime = TrueTime.default()
-        
+
         trueTime.availableStates().test {
             trueTime.sync()
-            
+
             val availableState = awaitItem()
             assertTrue(availableState is TrueTimeState.Available)
             assertTrue(availableState.clockOffset.absoluteValue < 5.seconds)
@@ -835,10 +835,10 @@ class TrueTimeTest {
 
 @Test
 class ComposeUITest {
-    
+
     @get:Rule
     val composeTestRule = createComposeRule()
-    
+
     @Test
     fun `TrueTimeDisplay显示测试`() {
         val mockTrueTime = mockk<TrueTime>()
@@ -847,14 +847,14 @@ class ComposeUITest {
             lastSyncTime = Clock.System.now(),
             accuracy = 50.milliseconds
         )
-        
+
         every { mockTrueTime.state } returns MutableStateFlow(testState)
         every { mockTrueTime.timeUpdates } returns flow { emit(Clock.System.now()) }
-        
+
         composeTestRule.setContent {
             TrueTimeDisplay(trueTime = mockTrueTime)
         }
-        
+
         composeTestRule.onNodeWithText("准确时间").assertIsDisplayed()
         composeTestRule.onNodeWithText("时钟偏移: 100ms").assertIsDisplayed()
     }
@@ -867,13 +867,13 @@ class ComposeUITest {
 @Test
 fun `性能基准测试`() = runTest {
     val trueTime = TrueTime.default()
-    
+
     // 测试同步时间
     val syncTime = measureTime {
         trueTime.sync()
     }
     assertTrue(syncTime < 5.seconds, "同步时间应在5秒内")
-    
+
     // 测试获取时间性能
     val getTimeTime = measureTime {
         repeat(1000) {
@@ -881,7 +881,7 @@ fun `性能基准测试`() = runTest {
         }
     }
     assertTrue(getTimeTime < 100.milliseconds, "获取时间应在100ms内")
-    
+
     // 测试内存使用
     val initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
     repeat(10000) {
@@ -889,7 +889,7 @@ fun `性能基准测试`() = runTest {
     }
     System.gc()
     val finalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
-    
+
     val memoryIncrease = finalMemory - initialMemory
     assertTrue(memoryIncrease < 1024 * 1024, "内存增长应小于1MB")
 }
@@ -909,7 +909,7 @@ graph LR
     B --> C[LegacyTrueTimeAdapter]
     C --> D[ModernTrueTime Implementation]
     D --> E[kotlinx-datetime]
-    
+
     F[新应用代码] --> D
 ```
 
@@ -933,8 +933,8 @@ import java.util.Date
  */
 class LegacyTrueTimeAdapter(
     private val modernTrueTime: ModernTrueTime
-) : com.instacart.truetime.time.TrueTime {
-    
+) : com.milo.reftime.time.TrueTime {
+
     // 旧API: sync() -> Job
     // 新API: suspend fun sync() -> Result<Unit>
     // 适配: 包装成Job让调用方式保持一致
@@ -943,18 +943,18 @@ class LegacyTrueTimeAdapter(
             modernTrueTime.sync()
         }
     }
-    
+
     // 旧API: now() -> java.util.Date
-    // 新API: suspend fun now() -> kotlinx.datetime.Instant  
+    // 新API: suspend fun now() -> kotlinx.datetime.Instant
     // 适配: 转换类型，阻塞调用变为同步
     override fun now(): Date {
         return runBlocking {
             modernTrueTime.now().toDate()
         }
     }
-    
+
     // 旧API: nowTrueOnly() -> Date (抛异常)
-    // 新API: nowOrNull() -> Instant? 
+    // 新API: nowOrNull() -> Instant?
     // 适配: null转换为异常，保持原有错误处理方式
     @Throws(IllegalStateException::class)
     override fun nowTrueOnly(): Date {
@@ -963,7 +963,7 @@ class LegacyTrueTimeAdapter(
             time?.toDate() ?: throw IllegalStateException("TrueTime not synced")
         }
     }
-    
+
     // 旧API: nowSafely() -> Date (永远有值)
     // 新API: nowSafe() -> Instant (永远有值)
     // 适配: 直接类型转换
@@ -972,7 +972,7 @@ class LegacyTrueTimeAdapter(
             modernTrueTime.nowSafe().toDate()
         }
     }
-    
+
     // 旧API: hasTheTime() -> Boolean
     // 新API: state.value 或 nowOrNull()
     // 适配: 检查是否能获取到时间
@@ -986,7 +986,7 @@ class LegacyTrueTimeAdapter(
 /**
  * 工厂函数：为现有代码提供熟悉的创建方式
  */
-fun createLegacyTrueTime(): com.instacart.truetime.time.TrueTime {
+fun createLegacyTrueTime(): com.milo.reftime.time.TrueTime {
     val modernImpl = TrueTime {
         ntpHosts("time.google.com", "time.apple.com")
         connectionTimeout = Duration.parse("PT30S")
@@ -1001,13 +1001,13 @@ fun createLegacyTrueTime(): com.instacart.truetime.time.TrueTime {
 ```kotlin
 class ExistingActivity : Activity() {
     private val trueTime = TrueTimeImpl() // 旧的实现
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // 这些调用方式完全不变
         trueTime.sync()
-        
+
         if (trueTime.hasTheTime()) {
             val currentTime = trueTime.now() // 仍然返回 Date
             updateUI(currentTime)
@@ -1020,13 +1020,13 @@ class ExistingActivity : Activity() {
 ```kotlin
 class ExistingActivity : Activity() {
     private val trueTime = createLegacyTrueTime() // 使用适配器，但接口一样
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // 调用方式完全一样，但内部用的是kotlinx-datetime
         trueTime.sync()
-        
+
         if (trueTime.hasTheTime()) {
             val currentTime = trueTime.now() // 仍然返回 Date
             updateUI(currentTime)
@@ -1062,7 +1062,7 @@ fun TrueTimeDisplay(
     val state by rememberTrueTimeState(trueTime)
     val currentTime by trueTime.timeUpdates
         .collectAsStateWithLifecycle(initialValue = Clock.System.now())
-    
+
     Column(modifier = modifier) {
         when (val current = state) {
             TrueTimeState.Uninitialized -> {
@@ -1145,7 +1145,7 @@ sequenceDiagram
     participant TK as KotlinTimeKeeper
     participant SNTP as SNTP客户端
     participant Server as NTP服务器
-    
+
     App->>MT: sync()
     MT->>SNTP: requestTime()
     SNTP->>Server: NTP请求
@@ -1154,11 +1154,11 @@ sequenceDiagram
     MT->>TK: saveSync()
     TK-->>MT: 缓存完成
     MT-->>App: Result.success
-    
+
     Note over MT: 发射状态更新
     MT->>MT: _state.emit(Available)
     MT->>MT: _timeUpdates.emit(time)
-    
+
     App->>MT: now()
     MT->>TK: getCurrentTime()
     TK-->>MT: 计算当前时间
@@ -1176,7 +1176,7 @@ stateDiagram-v2
     Failed --> Syncing: 重试同步
     Available --> [*]: cancel()
     Failed --> [*]: cancel()
-    
+
     note right of Available
         时间有效期1小时
         超时自动重新同步
@@ -1202,10 +1202,10 @@ stateDiagram-v2
 dependencies {
     // 新增kotlinx-datetime依赖
     api("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-    
+
     // 保持现有依赖
     api(libs.kotlinx.coroutines.core)
-    
+
     // 测试依赖
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.mockk:mockk:1.13.8")
@@ -1233,37 +1233,37 @@ dependencies {
 ### 测试示例
 ```kotlin
 class ModernTrueTimeTest {
-    
+
     @Test
     fun `时间计算准确性测试`() = runTest {
         val baseTime = Instant.parse("2024-01-15T12:00:00Z")
         val duration = Duration.parse("PT30M")
-        
+
         val result = baseTime.plus(duration)
         val expected = Instant.parse("2024-01-15T12:30:00Z")
-        
+
         assertEquals(expected, result)
     }
-    
+
     @Test
     fun `状态流转测试`() = runTest {
-        val trueTime = TrueTime { 
+        val trueTime = TrueTime {
             ntpHosts("time.google.com")
             debug = true
         }
-        
+
         val states = mutableListOf<TrueTimeState>()
         val job = launch {
             trueTime.state.collect { states.add(it) }
         }
-        
+
         trueTime.sync()
-        
+
         // 验证状态流转: Uninitialized -> Syncing -> Available
         assertEquals(TrueTimeState.Uninitialized, states[0])
         assertTrue(states[1] is TrueTimeState.Syncing)
         assertTrue(states[2] is TrueTimeState.Available)
-        
+
         job.cancel()
     }
 }
