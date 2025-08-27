@@ -1,5 +1,6 @@
 [versions]
 compileSdk = "34"
+kotlinxDatetime = "0.4.1"
 minSdk = "21"
 targetSdk = "34"
 
@@ -17,6 +18,7 @@ kotlinInject = "0.6.1"
 ksp = "1.9.10-1.0.13"
 rxJava = "2.1.1"
 spotless = "6.15.0"
+ktor = "2.3.7"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -27,6 +29,7 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 [libraries]
 
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 truetime = { group = "com.github.instacart", name = "truetime-android", version.ref = "trueTime" }
 truetime-rx = { group = "com.github.instacart.truetime-android", name = "library-extension-rx", version.ref = "trueTimeRx" }
 
@@ -38,3 +41,7 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlin-inject-compiler = { group = "me.tatarka.inject", name = "kotlin-inject-compiler-ksp", version.ref = "kotlinInject" }
 kotlin-inject-runtime = { group = "me.tatarka.inject", name = "kotlin-inject-runtime", version.ref = "kotlinInject" }
 rxjava-android = { group = "io.reactivex.rxjava2", name = "rxandroid", version.ref = "rxJava" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-network= { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }

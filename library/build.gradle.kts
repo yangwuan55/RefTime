@@ -33,7 +33,10 @@ android {
 
 dependencies {
   api(libs.kotlinx.coroutines.core)
-  api("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+  api(libs.kotlinx.datetime)
+  api(libs.ktor.client.core)
+  api(libs.ktor.client.okhttp)
+  api(libs.ktor.network)
 }
 
 afterEvaluate {

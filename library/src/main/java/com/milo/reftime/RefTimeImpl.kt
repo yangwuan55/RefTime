@@ -1,6 +1,6 @@
 package com.milo.reftime
 
-import com.milo.reftime.sntp.SntpClient
+import com.milo.reftime.sntp.KtorSntpClient
 import com.milo.reftime.time.TimeKeeper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -28,7 +28,7 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
 
   // 核心组件
   private val timeKeeper = TimeKeeper()
-  private val sntpClient = SntpClient()
+  private val sntpClient = com.milo.reftime.sntp.KtorSntpClient()
 
   // 同步任务
   private var syncJob: Job? = null
@@ -89,7 +89,7 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
             println("TrueTime: Attempting sync with server: $server")
           }
 
-          // 执行SNTP请求
+          // 执行SNTP请求 (支持Ktor-based或传统实现)
           val result = sntpClient.requestTime(server = server, timeout = config.connectionTimeout)
 
           // 保存同步结果
@@ -106,9 +106,10 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
           _timeUpdates.emit(result.networkTime)
 
           if (config.debug) {
-            println("TrueTime: Successfully synced with $server")
+            println("TrueTime: Successfully synced with $server via ${result.source}")
             println("TrueTime: Clock offset: ${result.clockOffset.toHumanReadable()}")
             println("TrueTime: Network time: ${result.networkTime}")
+            println("TrueTime: Accuracy estimate: ${result.accuracy.toHumanReadable()}")
           }
 
           return // 成功，退出函数

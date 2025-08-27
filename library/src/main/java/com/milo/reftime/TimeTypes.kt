@@ -29,9 +29,9 @@ sealed interface RefTimeState {
    * @param accuracy 准确度
    */
   data class Available(
-    val clockOffset: RefTimeDuration,
-    val lastSyncTime: RefTimeInstant,
-    val accuracy: RefTimeDuration
+      val clockOffset: RefTimeDuration,
+      val lastSyncTime: RefTimeInstant,
+      val accuracy: RefTimeDuration
   ) : RefTimeState
 
   /**
@@ -86,10 +86,11 @@ sealed class RefTimeError : Exception() {
 
 /** SNTP 请求结果 */
 data class SntpResult(
-  val networkTime: RefTimeInstant,
-  val clockOffset: RefTimeDuration,
-  val roundTripDelay: RefTimeDuration,
-  val accuracy: RefTimeDuration
+    val networkTime: RefTimeInstant,
+    val clockOffset: RefTimeDuration,
+    val roundTripDelay: RefTimeDuration,
+    val accuracy: RefTimeDuration,
+    val source: String = "unknown"
 )
 
 /** 扩展函数 - Duration 格式化 */
@@ -100,4 +101,3 @@ fun RefTimeDuration.toHumanReadable(): String =
       this < Duration.parse("1h") -> "${inWholeMinutes}m"
       else -> "${inWholeHours}h"
     }
-

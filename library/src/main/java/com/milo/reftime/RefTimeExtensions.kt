@@ -42,9 +42,7 @@ suspend fun RefTime.nowLocalDateTime(
 }
 
 /** 获取本地日期 */
-suspend fun RefTime.nowLocalDate(
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): LocalDate? {
+suspend fun RefTime.nowLocalDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate? {
   return try {
     nowOrNull()?.toLocalDateTime(timeZone)?.date
   } catch (e: Exception) {
@@ -53,9 +51,7 @@ suspend fun RefTime.nowLocalDate(
 }
 
 /** 获取本地时间 */
-suspend fun RefTime.nowLocalTime(
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): LocalTime? {
+suspend fun RefTime.nowLocalTime(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalTime? {
   return try {
     nowOrNull()?.toLocalDateTime(timeZone)?.time
   } catch (e: Exception) {
@@ -165,8 +161,7 @@ fun RefTime.getStateDescription(): Flow<String> =
     }
 
 /** 检查缓存是否即将过期 */
-suspend fun RefTime.isCacheExpiringSoon(
-): Boolean {
+suspend fun RefTime.isCacheExpiringSoon(): Boolean {
   return when (val currentState = state.value) {
     is RefTimeState.Available -> {
       val elapsed = Clock.System.now().minus(currentState.lastSyncTime)
