@@ -1,18 +1,38 @@
-# TrueTime for Android
+# TrueTime for Android - Kotlin DateTime Edition
 
 ![TrueTime](truetime.png "TrueTime for Android")
 
-*⚠️ See work in progress section below. TrueTime is undergoing some changes*
+**A completely modernized, kotlinx-datetime-first NTP client for Android.** 
+
+Provides accurate network time through reactive programming patterns and type-safe APIs using `kotlinx-datetime`, `kotlin.time`, `Flow`, and `Coroutines`.
+
+*This is a major version rewrite that completely removes `java.util.Date` and `java.time` dependencies in favor of kotlinx-datetime.*
 
 ----------------------------------------
 
-*Make sure to check out our counterpart too: [TrueTime](https://github.com/instacart/TrueTime.swift)
-, an NTP library for Swift.*
+*Make sure to check out our counterpart too: [TrueTime](https://github.com/instacart/TrueTime.swift), an NTP library for Swift.*
 
 # What is TrueTime?
 
-TrueTime is an (S)NTP client for Android. It helps you calculate the date and time "now" impervious
-to manual changes to device clock time.
+TrueTime is a **kotlinx-datetime-first** NTP client for Android. It helps you calculate the real "now" using **network time servers**, unaffected by:
+- Manual device clock changes
+- User timezone adjustments  
+- Incorrect system time settings
+- Wake-up clock drift
+
+## 🎯 Complete Modernization
+
+This version has been **completely rewritten** using modern Kotlin technologies:
+
+- **✨ kotlinx-datetime**: Pure Kotlin time API, replaces all `java.util.Date` and `java.time`
+- **⏱️ kotlin.time**: Native Kotlin duration handling with `Duration`
+- **🌊 Coroutines & Flow**: Fully async with reactive state management
+- **🏗️ Jetpack Compose**: Modern UI examples with Material3
+- **🛡️ Type Safety**: Sealed classes for errors and states
+- **🔧 DSL Configuration**: Kotlin DSL for fluent, type-safe configuration
+- **🧪 Testing**: Built-in test utilities with `TestTrueTime`
+
+**⚠️ Breaking Changes:** This is a major version that removes all legacy APIs. All time types now use `kotlinx.datetime.Instant` instead of `Date` or `java.time.Instant`.
 
 ## Why do I need TrueTime?
 
@@ -38,10 +58,11 @@ implementation details.
 TrueTime has since been migrated to Kotlin & Coroutines and no longer requires the additional Rx
 dependency. The concept hasn't changed but the above video is still a good explainer on the concept.
 
-# How do I use TrueTime?
+# Usage
 
-## Installation
+## 🎆 Modern kotlinx-datetime API 
 
+### Installation
 We use [JitPack](https://jitpack.io) to host the library.
 
 [![](https://jitpack.io/v/instacart/truetime-android.svg)](https://jitpack.io/#instacart/truetime-android)
@@ -50,94 +71,151 @@ Add this to your application's `build.gradle` file:
 
 ```groovy
 repositories {
-    maven {
-        url "https://jitpack.io"
-    }
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
-    // ...
     implementation 'com.github.instacart:truetime-android:<release-version>'
 }
 ```
 
-## Usage
-
-In your application class start the TrueTime sync-er like so:
-
-```kt
-// App.kt
+### Basic Setup
+```kotlin
 class App : Application() {
-
-    val trueTime = TrueTimeImpl()
-
+    val trueTime = TrueTime {
+        ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org")
+        timeout(Duration.parse("PT30S"))  // kotlin.time.Duration
+        retries(3)
+        debug(BuildConfig.DEBUG)
+    }
+    
     override fun onCreate() {
         super.onCreate()
-        trueTime.sync()
+        lifecycleScope.launch {
+            trueTime.sync().onSuccess {
+                println("✅ TrueTime synced")
+            }.onFailure { error ->
+                println("❌ Sync failed: ${error.message}")
+            }
+        }
     }
 }
 ```
 
-Once TrueTime gets a fix with an NTP time server, you can simply use:
+### Reactive Usage with Flow
+No more polling! Use reactive patterns:
 
-```kt
-(application as App).trueTime.now()
+```kotlin
+// Observe state changes
+trueTime.state.collect { state ->
+    when (state) {
+        TrueTimeState.Uninitialized -> showLoading()
+        is TrueTimeState.Available -> showAccurateTime()
+        is TrueTimeState.Failed -> showError(state.error)
+        else -> {}
+    }
+}
+
+// Get time updates reactively
+trueTime.timeUpdates.collectLatest { instant ->
+    updateTime(instant)
+}
 ```
 
-_Btw don't do ↑, inject TrueTime into your app and then just call `trueTime.now()`_
+### Time Access Methods
+```kotlin
+// All methods return kotlinx.datetime.Instant
+val accurateTime = trueTime.now()         // kotlinx.datetime.Instant
+val safeTime = trueTime.nowSafe()         // Falls back to system time
+val optionalTime = trueTime.nowOrNull()   // Null if not synced
 
-# Installation
+// kotlin.time.Duration calculations
+val offset = trueTime.getClockOffset()    // kotlin.time.Duration
+val timeSince = trueTime.durationSince(someInstant)
 
-## Usage
-
-```kt
-val trueTime = TrueTimeImpl()
-trueTime.sync()
-trueTime.now()
+// Extension utilities with kotlinx-datetime
+val isoTime = trueTime.nowISO()           // ISO 8601 string
+val formatted = trueTime.formatNow()      // Formatted with kotlinx-datetime
+val localTime = trueTime.nowLocalDateTime() // LocalDateTime
 ```
 
-💥
+## 📱 Jetpack Compose Example
+```kotlin
+@Composable
+fun TrueTimeDisplay(trueTime: TrueTime) {
+    val state by trueTime.state.collectAsStateWithLifecycle()
+    val currentTime by trueTime.timeUpdates
+        .collectAsStateWithLifecycle(initialValue = null)
+    
+    when (val current = state) {
+        is TrueTimeState.Available -> 
+            Text("Time: ${currentTime?.formatForDisplay()}")
+        is TrueTimeState.Failed -> 
+            Text("Error: ${current.error.message}")
+        is TrueTimeState.Syncing -> 
+            CircularProgressIndicator()
+        else -> Text("Initializing...")
+    }
+}
+```
 
-# ⚠️ Work in Progress 4.0
+## 🛠️ Configuration Options
 
-With the move to Kotlin & Coroutines TrueTime 4 was
-a [major overhaul](https://github.com/instacart/truetime-android/pull/129). We still haven't ported
-some of the additional bells & whistles. This section keeps track of those features (that will come
-in the near future). TrueTime is completely functional without these additional features, so feel
-free to start using it.
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `ntpHosts` | NTP server hosts | `["time.google.com"]` |
+| `connectionTimeout` | Network timeout | `30.seconds` |
+| `maxRetries` | Retry attempts | `3` |
+| `baseRetryDelay` | Initial retry delay | `1.seconds` |
+| `maxRetryDelay` | Maximum retry delay | `30.seconds` |
+| `debug` | Debug logging | `false` |
 
-Most of these todos should have corresponding "TODO" comments within the code.
+## 🚀 Quick Start
 
-- [ ] Introduce a Cache provider
+```kotlin
+// Modern kotlinx-datetime API
+val trueTime = TrueTime {
+    ntpHosts("time.google.com", "time.apple.com")
+    timeout(Duration.parse("PT15S"))
+}
 
-* Add an `interface CacheProvider` so folks can inject in their preferred caching mechanisms
-* Provide a default cache implementation (probably using the non-android version
-  of [DataStore](https://developer.android.com/topic/libraries/architecture/datastore#kts))
-* ? Provide example of using this with a Database like Realm
+// In coroutines
+lifecycleScope.launch {
+    trueTime.sync().onSuccess {
+        val accurateTime = trueTime.now()  // kotlinx.datetime.Instant
+        Log.d("TrueTime", "Network time: $accurateTime")
+    }
+}
+```
 
-- [ ] Algorithmic improvements
+## ✅ Feature Summary
 
-There are some exciting improvements that we have planned and use internally. Will have to upstream
-these changes (with a cleaner api + implementation)
+### Modern API Features
+- **🎯 kotlinx-datetime**: Pure Kotlin time API, no Java dependencies
+- **⏱️ kotlin.time**: Native duration handling with `Duration`
+- **🔄 Reactive**: StateFlow and Flow for reactive programming
+- **🛡️ Type Safety**: Sealed classes for errors and states
+- **🧪 Testing**: Built-in TestTrueTime for mocking
+- **⚡ Coroutines**: Suspended functions throughout
+- **🔧 DSL**: Kotlin DSL for type-safe configuration
+- **🎨 Extensions**: Rich kotlinx-datetime utilities
 
-- [ ] Move android dependency to separate package
+## 📦 Migration from Legacy API
 
-There's no reason for TrueTime (with the move to coroutines) to be an "android" library. It can be a
-pure kotlin lib.
+This version completely removes the old `java.util.Date` and `java.time` based APIs. All time handling now uses `kotlinx-datetime`.
 
-The only remaining dependency is `SystemClock` (which we should just have a provider for).
+**Key Changes:**
+- `java.util.Date` → `kotlinx.datetime.Instant`
+- `java.time.Duration` → `kotlin.time.Duration`
+- Blocking calls → `suspend` functions
+- Polling → `Flow` reactivity
+- Builders → Kotlin DSL
 
-- [ ] Utilize all ntp pool addresses from `TrueTimeParameters.ntpHostPool`
+**📖 See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed migration instructions.**
 
-We currently only take the first ntp host pool address from the supplied parameters. In the future,
-it would be nice to provide multiple ntp "pool" addresses like `time.google.com`, `time.apple.com`
-and utilize all of those to get the "best" value.
+## 📝 License
 
-- [ ] BootCompletedBroadcastReceiver sample
-
-Everytime a device is rebooted, the Truetime info is invalid. Previous libraries included an
-actual `BroadcastReceiver` but this is better handled by the application than the library. For safe
-measure, I'll include an example of how this can be done in case folks are curious.
+Apache 2.0. See [LICENSE](LICENSE) file.
 
 # License
 

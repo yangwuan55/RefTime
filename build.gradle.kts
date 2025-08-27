@@ -1,10 +1,9 @@
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-  alias(libs.plugins.spotless)
-  alias(libs.plugins.kotlin.android) apply false
-  // https://youtrack.jetbrains.com/issue/KT-46200
   alias(libs.plugins.android.application) apply false
   alias(libs.plugins.android.library) apply false
+  alias(libs.plugins.kotlin.android) apply false
+  id("com.diffplug.spotless") version "6.20.0"
 }
 
 spotless {

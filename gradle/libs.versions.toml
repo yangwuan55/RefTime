@@ -1,20 +1,20 @@
 [versions]
-compileSdk = "33"
+compileSdk = "34"
 minSdk = "21"
-targetSdk = "33"
+targetSdk = "34"
 
 trueTimeVersionCode = "12"
 trueTime = "4.0.0.alpha"
 trueTimeRx = "3.5"
 
-androidGradlePlugin = "8.0.2"
+androidGradlePlugin = "8.12.1"
 androidxAppCompat = "1.6.1"
 androidxLifecycle = "2.6.0"
 constraintlayout = "2.1.4"
-kotlin = "1.8.10"
+kotlin = "1.9.10"
 kotlinxCoroutines = "1.6.4"
 kotlinInject = "0.6.1"
-ksp = "1.8.10-1.0.9"
+ksp = "1.9.10-1.0.13"
 rxJava = "2.1.1"
 spotless = "6.15.0"
 
