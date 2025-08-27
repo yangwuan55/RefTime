@@ -51,8 +51,7 @@ class SntpClient {
             try {
               InetAddress.getByName(server)
             } catch (e: Exception) {
-              throw RefTimeError.InvalidResponse(
-                  server, "Failed to resolve hostname: ${e.message}")
+              throw RefTimeError.InvalidResponse(server, "Failed to resolve hostname: ${e.message}")
             }
 
         try {
@@ -103,9 +102,9 @@ class SntpClient {
   }
 
   private fun parseNtpResponse(
-    buffer: ByteArray,
-    requestTime: RefTimeInstant,
-    responseTime: RefTimeInstant
+      buffer: ByteArray,
+      requestTime: RefTimeInstant,
+      responseTime: RefTimeInstant
   ): com.milo.reftime.SntpResult {
 
     // 提取时间戳
@@ -137,7 +136,7 @@ class SntpClient {
     // 估算准确度（使用往返延迟的一半作为不确定性）
     val accuracy = roundTripDelay / 2
 
-    return com.milo.reftime.SntpResult(
+    return SntpResult(
         networkTime = networkTime,
         clockOffset = clockOffset,
         roundTripDelay = roundTripDelay,
