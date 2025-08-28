@@ -2,18 +2,19 @@ package com.milo.reftime
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import com.milo.reftime.model.*
 
 /**
- * 现代化TrueTime API - 完全基于 Kotlin 协程和 Flow
+ * 现代化RefTime API - 完全基于 Kotlin 协程和 Flow
  *
- * 这是TrueTime的主要接口，提供响应式的时间同步和访问功能。 使用kotlinx-datetime作为时间类型，Flow作为响应式数据流。
+ * 这是RefTime的主要接口，提供响应式的时间同步和访问功能。 使用kotlinx-datetime作为时间类型，Flow作为响应式数据流。
  */
 interface RefTime {
 
   /**
    * 状态流 - 实时反映同步状态
    *
-   * 可以订阅此流来监听TrueTime的状态变化：
+   * 可以订阅此流来监听RefTime的状态变化：
    * - Uninitialized: 未初始化
    * - Syncing: 同步中
    * - Available: 时间可用

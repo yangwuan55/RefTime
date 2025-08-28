@@ -1,20 +1,21 @@
 package com.milo.reftime
 
-import com.milo.reftime.time.TimeKeeper
+import com.milo.reftime.internal.TimeKeeper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
+import com.milo.reftime.model.*
 
-/** KotlinDateTime TrueTime实现 - 完全基于kotlinx-datetime的现代化实现 */
-class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
+/** KotlinDateTime RefTime实现 - 完全基于kotlinx-datetime的现代化实现 */
+class RefTimeImpl(private val config: com.milo.reftime.config.RefTimeConfig) : RefTime {
 
   // 协程作用域
   private val scope =
       CoroutineScope(
           Dispatchers.IO +
               SupervisorJob() +
-              CoroutineName("TrueTime-${System.currentTimeMillis()}"))
+              CoroutineName("RefTime-${System.currentTimeMillis()}"))
 
   // 状态管理
   private val _state = MutableStateFlow<RefTimeState>(RefTimeState.Uninitialized)
@@ -85,7 +86,7 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
           _state.emit(RefTimeState.Syncing(progress))
 
           if (config.debug) {
-            println("TrueTime: Attempting sync with server: $server")
+            println("RefTime: Attempting sync with server: $server")
           }
 
           // 执行SNTP请求 (支持Ktor-based或传统实现)
@@ -105,17 +106,17 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
           _timeUpdates.emit(result.networkTime)
 
           if (config.debug) {
-            println("TrueTime: Successfully synced with $server via ${result.source}")
-            println("TrueTime: Clock offset: ${result.clockOffset.toHumanReadable()}")
-            println("TrueTime: Network time: ${result.networkTime}")
-            println("TrueTime: Accuracy estimate: ${result.accuracy.toHumanReadable()}")
+            println("RefTime: Successfully synced with $server via ${result.source}")
+            println("RefTime: Clock offset: ${result.clockOffset.toHumanReadable()}")
+            println("RefTime: Network time: ${result.networkTime}")
+            println("RefTime: Accuracy estimate: ${result.accuracy.toHumanReadable()}")
           }
 
           return // 成功，退出函数
         } catch (e: Exception) {
           errors[server] = e
           if (config.debug) {
-            println("TrueTime: Failed to sync with $server: ${e.message}")
+            println("RefTime: Failed to sync with $server: ${e.message}")
           }
 
           // 如果不是最后一个服务器，继续尝试下一个
@@ -171,13 +172,13 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
 
   override fun toString(): String {
     return when (val current = _state.value) {
-      RefTimeState.Uninitialized -> "TrueTime[Uninitialized]"
-      is RefTimeState.Syncing -> "TrueTime[Syncing(${(current.progress * 100).toInt()}%)]"
+      RefTimeState.Uninitialized -> "RefTime[Uninitialized]"
+      is RefTimeState.Syncing -> "RefTime[Syncing(${(current.progress * 100).toInt()}%)]"
       is RefTimeState.Available -> {
         val offset = current.clockOffset.toHumanReadable()
-        "TrueTime[Available(offset=$offset)]"
+        "RefTime[Available(offset=$offset)]"
       }
-      is RefTimeState.Failed -> "TrueTime[Failed(${current.error.message})]"
+      is RefTimeState.Failed -> "RefTime[Failed(${current.error.message})]"
     }
   }
 }

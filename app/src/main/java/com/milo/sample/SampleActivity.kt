@@ -16,9 +16,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milo.reftime.*
+import com.milo.reftime.ext.debugInfo
+import com.milo.reftime.ext.timeUpdatesAsFormatted
+import com.milo.reftime.model.RefTimeState
+import com.milo.reftime.model.toHumanReadable
 import kotlinx.coroutines.launch
 
-/** 现代化示例Activity - 展示新的TrueTime API */
+/** 现代化示例Activity - 展示新的RefTime API */
 class SampleActivity : ComponentActivity() {
 
   private lateinit var refTime: RefTime
@@ -26,15 +30,15 @@ class SampleActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    // 获取TrueTime实例
+    // 获取RefTime实例
     refTime = (application as App).refTime
 
-    setContent { TrueTimeTheme { TrueTimeApp(refTime = refTime) } }
+    setContent { RefTimeTheme { RefTimeApp(refTime = refTime) } }
   }
 }
 
 @Composable
-fun TrueTimeApp(refTime: RefTime) {
+fun RefTimeApp(refTime: RefTime) {
   val scrollState = rememberScrollState()
 
   Column(
@@ -42,25 +46,25 @@ fun TrueTimeApp(refTime: RefTime) {
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // 标题
         Text(
-            text = "TrueTime Kotlin DateTime Demo", style = MaterialTheme.typography.headlineMedium)
+            text = "RefTime Kotlin DateTime Demo", style = MaterialTheme.typography.headlineMedium)
 
         // 状态显示卡片
-        TrueTimeStateCard(refTime = refTime)
+        RefTimeStateCard(refTime = refTime)
 
         // 时间显示卡片
-        TrueTimeDisplayCard(refTime = refTime)
+        RefTimeDisplayCard(refTime = refTime)
 
         // 控制按钮
-        TrueTimeControlsCard(refTime = refTime)
+        RefTimeControlsCard(refTime = refTime)
 
         // 调试信息卡片
-        TrueTimeDebugCard(refTime = refTime)
+        RefTimeDebugCard(refTime = refTime)
       }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrueTimeStateCard(refTime: RefTime) {
+fun RefTimeStateCard(refTime: RefTime) {
   val state by refTime.state.collectAsStateWithLifecycle()
 
   Card {
@@ -135,7 +139,7 @@ fun TrueTimeStateCard(refTime: RefTime) {
 }
 
 @Composable
-fun TrueTimeDisplayCard(refTime: RefTime) {
+fun RefTimeDisplayCard(refTime: RefTime) {
   val currentTime by refTime.timeUpdates.collectAsStateWithLifecycle(initialValue = null)
   val formattedTime by
       refTime.timeUpdatesAsFormatted().collectAsStateWithLifecycle(initialValue = "")
@@ -170,7 +174,7 @@ fun TrueTimeDisplayCard(refTime: RefTime) {
 }
 
 @Composable
-fun TrueTimeControlsCard(refTime: RefTime) {
+fun RefTimeControlsCard(refTime: RefTime) {
   val scope = rememberCoroutineScope()
   val state by refTime.state.collectAsStateWithLifecycle()
   val isSyncing = state is RefTimeState.Syncing
@@ -236,7 +240,7 @@ fun TrueTimeControlsCard(refTime: RefTime) {
 }
 
 @Composable
-fun TrueTimeDebugCard(refTime: RefTime) {
+fun RefTimeDebugCard(refTime: RefTime) {
   var showDebug by remember { mutableStateOf(false) }
   val debugInfo by refTime.debugInfo().collectAsStateWithLifecycle(initialValue = "")
 
@@ -263,6 +267,6 @@ fun TrueTimeDebugCard(refTime: RefTime) {
 }
 
 @Composable
-fun TrueTimeTheme(content: @Composable () -> Unit) {
+fun RefTimeTheme(content: @Composable () -> Unit) {
   MaterialTheme(colorScheme = lightColorScheme(), content = content)
 }

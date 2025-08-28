@@ -1,13 +1,16 @@
-package com.milo.reftime
+package com.milo.reftime.config
 
 import kotlin.time.Duration
+import com.milo.reftime.RefTime
+import com.milo.reftime.RefTimeImpl
+import com.milo.reftime.model.*
 
 /** DSL标记注解 */
-@DslMarker annotation class TrueTimeDsl
+@DslMarker annotation class RefTimeDsl
 
-/** TrueTime配置类 - 使用Kotlin DSL */
-@TrueTimeDsl
-class TrueTimeConfig internal constructor() {
+/** RefTime配置类 - 使用Kotlin DSL */
+@RefTimeDsl
+class RefTimeConfig internal constructor() {
 
   /** NTP服务器主机列表 */
   var ntpHosts: List<String> = listOf("time.google.com", "time.apple.com", "pool.ntp.org")
@@ -72,7 +75,7 @@ class TrueTimeConfig internal constructor() {
   }
 
   override fun toString(): String = buildString {
-    append("TrueTimeConfig(")
+    append("RefTimeConfig(")
     append("hosts=${ntpHosts.take(3).joinToString()}")
     if (ntpHosts.size > 3) append("...")
     append(", timeout=${connectionTimeout.toHumanReadable()}")
@@ -82,14 +85,14 @@ class TrueTimeConfig internal constructor() {
   }
 }
 
-/** DSL构建函数 - 创建TrueTime实例 */
-fun TrueTime(config: TrueTimeConfig.() -> Unit = {}): RefTime {
-  val configuration = TrueTimeConfig().apply(config)
+/** DSL构建函数 - 创建RefTime实例 */
+fun RefTime(config: RefTimeConfig.() -> Unit = {}): RefTime {
+  val configuration = RefTimeConfig().apply(config)
   return RefTimeImpl(configuration)
 }
 
 /** 预定义配置 - 默认配置 */
-fun RefTime.Companion.default(): RefTime = TrueTime {
+fun RefTime.Companion.default(): RefTime = RefTime {
   ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org")
   timeout(Duration.parse("PT30S"))
   retries(3)
@@ -97,7 +100,7 @@ fun RefTime.Companion.default(): RefTime = TrueTime {
 }
 
 /** 预定义配置 - 快速配置（短超时） */
-fun RefTime.Companion.fast(): RefTime = TrueTime {
+fun RefTime.Companion.fast(): RefTime = RefTime {
   host("time.google.com")
   timeout(Duration.parse("PT10S"))
   retries(1)
@@ -105,7 +108,7 @@ fun RefTime.Companion.fast(): RefTime = TrueTime {
 }
 
 /** 预定义配置 - 可靠配置（多服务器、长超时） */
-fun RefTime.Companion.reliable(): RefTime = TrueTime {
+fun RefTime.Companion.reliable(): RefTime = RefTime {
   ntpHosts(
       "time.google.com", "time.apple.com", "pool.ntp.org", "time.nist.gov", "time.cloudflare.com")
   timeout(Duration.parse("PT60S"))
@@ -114,7 +117,7 @@ fun RefTime.Companion.reliable(): RefTime = TrueTime {
 }
 
 /** 预定义配置 - 调试配置 */
-fun RefTime.Companion.debug(): RefTime = TrueTime {
+fun RefTime.Companion.debug(): RefTime = RefTime {
   ntpHosts("time.google.com", "time.apple.com")
   timeout(Duration.parse("PT30S"))
   retries(3)

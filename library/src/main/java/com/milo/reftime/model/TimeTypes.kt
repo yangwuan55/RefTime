@@ -1,15 +1,15 @@
-package com.milo.reftime
+package com.milo.reftime.model
 
 import kotlin.time.Duration
 
-/** TrueTime 现代化类型系统 - 完全基于 kotlinx-datetime */
+/** RefTime 现代化类型系统 - 完全基于 kotlinx-datetime */
 
 // 统一时间类型定义
 typealias RefTimeInstant = kotlinx.datetime.Instant
 
 typealias RefTimeDuration = kotlin.time.Duration
 
-/** TrueTime 状态 - 响应式状态管理 */
+/** RefTime 状态 - 响应式状态管理 */
 sealed interface RefTimeState {
   /** 未初始化状态 */
   data object Uninitialized : RefTimeState
@@ -42,11 +42,11 @@ sealed interface RefTimeState {
   data class Failed(val error: RefTimeError) : RefTimeState
 }
 
-/** TrueTime 错误类型 - 类型安全的错误处理 */
+/** RefTime 错误类型 - 类型安全的错误处理 */
 sealed class RefTimeError : Exception() {
   /** 时间未同步错误 */
   data object NotSynced : RefTimeError() {
-    override val message: String = "TrueTime has not been synced yet"
+    override val message: String = "RefTime has not been synced yet"
   }
 
   /** 网络不可用错误 */

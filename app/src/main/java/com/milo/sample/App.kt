@@ -2,13 +2,14 @@ package com.milo.sample
 
 import android.app.Application
 import com.milo.reftime.*
+import com.milo.reftime.config.RefTime
 import kotlin.time.Duration
 
-/** 示例应用 - 展示现代化TrueTime API的使用 */
+/** 示例应用 - 展示现代化RefTime API的使用 */
 class App : Application() {
 
-  /** 全局TrueTime实例 - 使用现代化API */
-  val refTime: RefTime = TrueTime {
+  /** 全局RefTime实例 - 使用现代化API */
+  val refTime: RefTime = RefTime {
     // 配置多个可靠的NTP服务器
     ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org", "time.cloudflare.com")
 
@@ -33,11 +34,11 @@ class App : Application() {
 
     // 应用启动时可以选择自动同步时间
     // lifecycleScope.launch {
-    //     trueTime.sync()
+    //     RefTime.sync()
     // }
 
     if (BuildConfig.DEBUG) {
-      println("TrueTime App initialized with config: $refTime")
+      println("RefTime App initialized with config: $refTime")
     }
   }
 }

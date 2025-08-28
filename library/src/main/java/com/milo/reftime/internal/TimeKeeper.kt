@@ -1,6 +1,6 @@
-package com.milo.reftime.time
+package com.milo.reftime.internal
 
-import com.milo.reftime.*
+import com.milo.reftime.model.*
 import kotlin.time.Duration
 import kotlinx.datetime.Clock
 

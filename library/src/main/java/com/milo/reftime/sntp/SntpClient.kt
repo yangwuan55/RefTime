@@ -1,6 +1,6 @@
 package com.milo.reftime.sntp
 
-import com.milo.reftime.*
+import com.milo.reftime.model.*
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlin.time.Duration

@@ -1,10 +1,12 @@
-package com.milo.reftime
+package com.milo.reftime.ext
 
 import kotlin.time.Duration
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.*
+import com.milo.reftime.RefTime
+import com.milo.reftime.model.*
 
-/** TrueTime扩展函数 - 完全基于kotlinx-datetime */
+/** RefTime扩展函数 - 完全基于kotlinx-datetime */
 
 // ==================== 时间格式化扩展 ====================
 
@@ -177,7 +179,7 @@ suspend fun RefTime.isCacheExpiringSoon(): Boolean {
 fun RefTime.debugInfo(): Flow<String> =
     combine(state, timeUpdates.onStart { emit(Clock.System.now()) }) { state, currentTime ->
       buildString {
-        appendLine("=== TrueTime Debug Info ===")
+        appendLine("=== RefTime Debug Info ===")
         appendLine("State: $state")
         appendLine("Current Time: $currentTime")
         when (state) {
