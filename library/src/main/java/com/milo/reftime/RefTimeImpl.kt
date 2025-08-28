@@ -26,7 +26,7 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
   override val timeUpdates: Flow<RefTimeInstant> = _timeUpdates.asSharedFlow()
 
   // 核心组件
-  private val timeKeeper = TimeKeeper()
+  private val timeKeeper = TimeKeeper(config.cacheValidDuration)
   private val sntpClient = com.milo.reftime.sntp.SntpClient()
 
   // 同步任务
@@ -167,16 +167,6 @@ class RefTimeImpl(private val config: TrueTimeConfig) : RefTime {
   internal fun close() {
     scope.cancel()
     timeKeeper.clearCache()
-  }
-
-  /** 获取调试信息 */
-  fun getDebugInfo(): String = buildString {
-    appendLine("KotlinDateTimeTrueTime Debug Info:")
-    appendLine("- State: ${_state.value}")
-    appendLine("- Config: ${config}")
-    appendLine("- Has synced: ${timeKeeper.hasValidCache()}")
-    appendLine()
-    append(timeKeeper.getDebugInfo())
   }
 
   override fun toString(): String {

@@ -5,7 +5,7 @@ import kotlin.time.Duration
 import kotlinx.datetime.Clock
 
 /** 现代化时间管理器 - 完全基于kotlinx-datetime */
-internal class TimeKeeper {
+internal class TimeKeeper(private val cacheValidDuration: RefTimeDuration = Duration.parse("PT1H")) {
 
   // 缓存的网络时间
   private var cachedNetworkTime: RefTimeInstant? = null
@@ -19,8 +19,7 @@ internal class TimeKeeper {
   // 最后同步时的系统时间
   private var lastSyncSystemTime: RefTimeInstant? = null
 
-  // 缓存有效期 (默认1小时)
-  private val cacheValidDuration: RefTimeDuration = Duration.parse("PT1H")
+  // 缓存有效期 (从配置传入或使用默认值)
 
   /** 保存同步结果 */
   fun saveSync(result: SntpResult) {
@@ -87,14 +86,4 @@ internal class TimeKeeper {
     return if (remaining > Duration.ZERO) remaining else Duration.ZERO
   }
 
-  /** 获取调试信息 */
-  fun getDebugInfo(): String = buildString {
-    appendLine("ModernTimeKeeper Debug Info:")
-    appendLine("- Has valid cache: ${hasValidCache()}")
-    appendLine("- Clock offset: ${clockOffset.toHumanReadable()}")
-    appendLine("- Accuracy: ${accuracy.toHumanReadable()}")
-    appendLine("- Last sync: ${lastSyncSystemTime}")
-    appendLine("- Cached time: ${cachedNetworkTime}")
-    appendLine("- Cache remaining: ${getCacheRemainingTime()?.toHumanReadable() ?: "N/A"}")
-  }
 }
