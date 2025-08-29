@@ -18,7 +18,7 @@ fun main() = application {
     }
     
     Window(
-        title = "TrueTime Desktop Demo",
+        title = "RefTime Desktop Demo",
         onCloseRequest = ::exitApplication
     ) {
         RefTimeApp(refTime = refTime)

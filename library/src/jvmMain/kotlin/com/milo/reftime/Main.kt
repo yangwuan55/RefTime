@@ -5,7 +5,7 @@ package com.milo.reftime
  * 提供简单的命令行界面来测试时间同步功能
  */
 fun main() {
-    println("=== TrueTime JVM Demo ===")
+    println("=== RefTime JVM Demo ===")
     println("这是一个库模块，不包含可执行的主程序")
     println("请使用以下方式运行演示：")
     println("1. ./gradlew :desktop-demo:run - 运行桌面演示")

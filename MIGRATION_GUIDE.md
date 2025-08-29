@@ -24,7 +24,7 @@ This is a **complete rewrite** of TrueTime using modern Kotlin technologies. The
 - 🌊 **Reactive State**: Real-time sync status via Flow
 - 🛡️ **Type Safety**: Sealed error classes
 - 🔧 **DSL Configuration**: Fluent, type-safe setup
-- 🧪 **Built-in Testing**: `TestTrueTime` for mocking
+- 🧪 **Built-in Testing**: `TestRefTime` for mocking
 - 📱 **Compose Integration**: Ready for modern Android UI
 
 ## 🔄 Before and After Migration
@@ -35,7 +35,7 @@ This is a **complete rewrite** of TrueTime using modern Kotlin technologies. The
 ```kotlin
 // This API no longer exists
 class App : Application() {
-    val trueTime = TrueTimeImpl()
+    val refTime = RefTimeImpl()
     
     override fun onCreate() {
         super.onCreate()
@@ -55,7 +55,7 @@ lifecycleScope.launch {
 #### After (kotlinx-datetime API)
 ```kotlin
 class App : Application() {
-    val trueTime = TrueTime {
+    val refTime = RefTime {
         ntpHosts("time.google.com", "time.apple.com", "pool.ntp.org")
         timeout(Duration.parse("PT30S"))  // kotlin.time.Duration
         retries(3)
@@ -78,11 +78,11 @@ class App : Application() {
 lifecycleScope.launch {
     trueTime.state.collect { state ->
         when (state) {
-            is TrueTimeState.Available -> {
+            is RefTimeState.Available -> {
                 val time = trueTime.now() // kotlinx.datetime.Instant
                 // Use time...
             }
-            is TrueTimeState.Failed -> {
+            is RefTimeState.Failed -> {
                 // Handle error...
             }
             else -> { /* Loading states */ }
@@ -97,10 +97,10 @@ lifecycleScope.launch {
 lifecycleScope.launch {
     trueTime.state.collect { state ->
         when (state) {
-            TrueTimeState.Uninitialized -> showLoading()
-            is TrueTimeState.Syncing -> updateProgress(state.progress)
-            is TrueTimeState.Available -> showTime()
-            is TrueTimeState.Failed -> showError(state.error)
+            RefTimeState.Uninitialized -> showLoading()
+            is RefTimeState.Syncing -> updateProgress(state.progress)
+            is RefTimeState.Available -> showTime()
+            is RefTimeState.Failed -> showError(state.error)
         }
     }
 }
@@ -151,16 +151,16 @@ val offset = trueTime.durationSince(Instant.now())
 
 #### Legacy Parameters
 ```kotlin
-val params = TrueTimeParameters.Builder()
+val params = RefTimeParameters.Builder()
     .ntpHostPool(arrayListOf("time.apple.com"))
     .connectionTimeout(30000) // milliseconds
     .buildParams()
-val trueTime = TrueTimeImpl(params)
+val refTime = RefTimeImpl(params)
 ```
 
 #### Modern Configuration
 ```kotlin
-val trueTime = TrueTime {
+val refTime = RefTime {
     ntpHosts("time.apple.com") // Variadic args
     connectionTimeout = 30.seconds // Kotlin Duration
     maxRetries = 3
@@ -177,7 +177,7 @@ try {
     val time = trueTime.nowTrueOnly()
 } catch (e: IllegalStateException) {
     when (e.message) {
-        "TrueTime not initialized" -> showError()
+        "RefTime not initialized" -> showError()
         // ... other cases
     }
 }
@@ -194,7 +194,7 @@ result?.let {
 
 // Or with custom error types
 when (val state = trueTime.state.value) {
-    is TrueTimeState.Failed -> handleError(state.error)
+    is RefTimeState.Failed -> handleError(state.error)
     // ... other states
 }
 ```
@@ -205,19 +205,19 @@ when (val state = trueTime.state.value) {
 
 ```kotlin
 @Composable
-fun ModernTimeDisplay(trueTime: TrueTime) {
+fun ModernTimeDisplay(refTime: RefTime) {
     val state by trueTime.state.collectAsState() // Observe state changes
     
     when (val current = state) {
-        TrueTimeState.Uninitialized -> LoadingView()
-        is TrueTimeState.Syncing -> ProgressBar(current.progress)
-        is TrueTimeState.Available -> TimeDisplay(scapegoat = current)
-        is TrueTimeState.Failed -> ErrorView(current.error)
+        RefTimeState.Uninitialized -> LoadingView()
+        is RefTimeState.Syncing -> ProgressBar(current.progress)
+        is RefTimeState.Available -> TimeDisplay(scapegoat = current)
+        is RefTimeState.Failed -> ErrorView(current.error)
     }
 }
 
 @Composable
-fun ContinuousTimeDisplay(trueTime: TrueTime) {
+fun ContinuousTimeDisplay(refTime: RefTime) {
     val trueNow by trueTime.timeUpdates
         .collectAsStateWithLifecycle("")
     
@@ -229,12 +229,12 @@ fun ContinuousTimeDisplay(trueTime: TrueTime) {
 
 #### Legacy Testing
 ```kotlin
-class TrueTimeTest {
-    private lateinit var trueTime: TrueTimeImpl
+class RefTimeTest {
+    private lateinit var refTime: RefTimeImpl
     
     @Before
     fun setup() {
-        trueTime = TrueTimeImpl()
+        refTime = RefTimeImpl()
         // Complex mocking required
     }
 }
@@ -242,13 +242,13 @@ class TrueTimeTest {
 
 #### Modern Testing
 ```kotlin
-class TrueTimeTest {
+class RefTimeTest {
     private val testTime = Instant.parse("2024-01-15T12:00:00Z")
-    private val mockTrueTime = TestTrueTime(testTime)
+    private val mockRefTime = TestRefTime(testTime)
     
     @Test
     fun testModernAPI() = runTest {
-        assertEquals(testTime, mockTrueTime.now())
+        assertEquals(testTime, mockRefTime.now())
     }
 }
 ```
@@ -257,7 +257,7 @@ class TrueTimeTest {
 
 ```kotlin
 // Modern extensions provide more utility
-val trueTime = TrueTime { ntpHosts("time.google.com") }
+val refTime = RefTime { ntpHosts("time.google.com") }
 
 // Type-safe formatting
 lifecycleScope.launch {
@@ -292,12 +292,12 @@ lifecycleScope.launch {
 ### Migration Example 1: Simple Usage
 ```kotlin
 // Before
-val trueTime = TrueTimeImpl()
+val refTime = RefTimeImpl()
 trueTime.sync()
 val time = trueTime.now()
 
 // After
-val trueTime = TrueTime { ntpHosts("time.google.com") }
+val refTime = RefTime { ntpHosts("time.google.com") }
 aval job = lifecycleScope.launch {
     trueTime.sync().onSuccess { 
         val time = trueTime.now() 
@@ -331,7 +331,7 @@ lifecycleScope.launch {
 // After - Reactive
 lifecycleScope.launch {
     trueTime.state
-        .filterIsInstance<TrueTimeState.Available>()
+        .filterIsInstance<RefTimeState.Available>()
         .collect { /* React to state */ }
 }
 ```
@@ -356,16 +356,16 @@ lifecycleScope.launch {
 - Builders → DSL functions
 
 ### 🔁 Java Interoperability
-A Java-friendly API wrapper is not provided in this modernization. Legacy `TrueTimeImpl` can be used for Java projects.
+A Java-friendly API wrapper is not provided in this modernization. Legacy `RefTimeImpl` can be used for Java projects.
 
 ## Migration Checklist
 
-- [ ] Replace `TrueTimeImpl()` with `TrueTime { ... }` DSL
+- [ ] Replace `RefTimeImpl()` with `RefTime { ... }` DSL
 - [ ] Update all `now()` calls to handle suspend
 - [ ] Replace polling loops with flow collection
 - [ ] Update error handling to use sealed classes
 - [ ] Migrate Date → Instant type usage
-- [ ] Update tests to use `TestTrueTime`
+- [ ] Update tests to use `TestRefTime`
 - [ ] Update configuration builders to DSL syntax
 - [ ] Add Flow collection where appropriate (Compose or ViewModel)
 
@@ -374,8 +374,8 @@ A Java-friendly API wrapper is not provided in this modernization. Legacy `TrueT
 The legacy API is **still available** for migration periods. You can mix both APIs during transition:
 ```kotlin
 // Migrate gradually
-val legacyTime = legacyTrueTime.now()
-val modernTime = modernTrueTime.now()
+val legacyTime = legacyRefTime.now()
+val modernTime = modernRefTime.now()
 ```
 
 The modern API is designed to be **drop-in compatible** with most use cases while providing much better Kotlin developer experience.

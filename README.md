@@ -1,10 +1,9 @@
-# 🕐 TrueTime Android - 现代化时间同步库
+# 🕐 RefTime Android - 现代化时间同步库
 
-![TrueTime](truetime.png "TrueTime for Android")
+![RefTime](truetime.png "RefTime for Android")
 
 **完全现代化的 NTP 客户端库，基于 Kotlin 协程、Flow 和 kotlinx-datetime 构建，为 Android 应用提供准确可靠的网络时间同步功能。**
 
-[![JitPack](https://jitpack.io/v/instacart/truetime-android.svg)](https://jitpack.io/#instacart/truetime-android)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-blue.svg)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
@@ -18,27 +17,20 @@
 - **🧪 测试完备**: 内置测试工具和模拟支持
 - **🔧 灵活配置**: Kotlin DSL 配置，简单易用
 
-## 🎯 为什么需要 TrueTime？
+## 🎯 为什么需要 RefTime？
 
 在某些应用中，获取真实准确的日期和时间变得非常重要。大多数设备上，如果时钟被手动更改，`Date()` 实例会受到本地设置的影响。
 
-用户可能出于各种原因更改时间，比如处于不同时区、为了准时而将时钟调快 5-10 分钟等。您的应用或服务可能需要一个不受这些更改影响且可靠的准确时间源。TrueTime 正是为此而生。
+用户可能出于各种原因更改时间，比如处于不同时区、为了准时而将时钟调快 5-10 分钟等。您的应用或服务可能需要一个不受这些更改影响且可靠的准确时间源。RefTime 正是为此而生。
 
 ## 🚀 快速开始
 
 ### 安装依赖
 
-在项目的 `build.gradle.kts` 中添加：
+项目目前处于开发阶段，暂未发布到 Maven 仓库。您可以通过以下方式使用：
 
-```kotlin
-repositories {
-    maven { url = uri("https://jitpack.io") }
-}
-
-dependencies {
-    implementation("com.github.instacart:truetime-android:<version>")
-}
-```
+1. **直接源码集成**: 克隆项目并作为模块依赖
+2. **本地发布**: 使用 `./gradlew :library:publishToMavenLocal` 发布到本地 Maven 仓库
 
 ### 基本使用
 
@@ -50,14 +42,14 @@ class MyApp : Application() {
         retries(3)
         debug(BuildConfig.DEBUG)
     }
-    
+
     override fun onCreate() {
         super.onCreate()
         lifecycleScope.launch {
             refTime.sync().onSuccess {
-                Log.d("TrueTime", "✅ 时间同步成功")
+                Log.d("RefTime", "✅ 时间同步成功")
             }.onFailure { error ->
-                Log.e("TrueTime", "❌ 同步失败: ${error.message}")
+                Log.e("RefTime", "❌ 同步失败: ${error.message}")
             }
         }
     }
@@ -114,15 +106,15 @@ fun TimeDisplay(refTime: RefTime) {
     val state by refTime.state.collectAsStateWithLifecycle()
     val currentTime by refTime.timeUpdates
         .collectAsStateWithLifecycle(initialValue = null)
-    
+
     when (val current = state) {
-        RefTimeState.Uninitialized -> 
+        RefTimeState.Uninitialized ->
             Text("正在初始化...")
-        is RefTimeState.Syncing -> 
+        is RefTimeState.Syncing ->
             CircularProgressIndicator(current.progress)
-        is RefTimeState.Available -> 
+        is RefTimeState.Available ->
             Text("准确时间: ${currentTime?.formatForDisplay()}")
-        is RefTimeState.Failed -> 
+        is RefTimeState.Failed ->
             Text("错误: ${current.error.message}")
     }
 }
@@ -161,17 +153,17 @@ val customRefTime = RefTime {
 ```kotlin
 lifecycleScope.launch {
     refTime.sync().fold(
-        onSuccess = { 
+        onSuccess = {
             // 同步成功
             val time = refTime.now()
         },
         onFailure = { error ->
             when (error) {
-                is RefTimeError.NetworkUnavailable -> 
+                is RefTimeError.NetworkUnavailable ->
                     showNetworkError()
-                is RefTimeError.ServerTimeout -> 
+                is RefTimeError.ServerTimeout ->
                     showTimeoutError(error.server)
-                is RefTimeError.AllServersFailed -> 
+                is RefTimeError.AllServersFailed ->
                     showAllServersFailed(error.errors)
                 else -> showGenericError()
             }
@@ -186,7 +178,7 @@ lifecycleScope.launch {
 class TimeServiceTest {
     private val testTime = Instant.parse("2024-01-15T12:00:00Z")
     private val mockRefTime = TestRefTime(testTime)
-    
+
     @Test
     fun testTimeAccess() = runTest {
         assertEquals(testTime, mockRefTime.now())
@@ -204,7 +196,7 @@ class TimeServiceTest {
 
 ## 🔄 迁移指南
 
-这是 TrueTime 的完全重写版本，所有 API 都已现代化。如果您从旧版本迁移，请参考 [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)。
+这是 RefTime 的完全重写版本，所有 API 都已现代化。如果您从旧版本迁移，请参考 [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)。
 
 **主要变化:**
 - `java.util.Date` → `kotlinx.datetime.Instant`
@@ -220,7 +212,7 @@ class TimeServiceTest {
 
 ```bash
 # 克隆项目
-git clone https://github.com/instacart/truetime-android.git
+git clone https://github.com/yangwuan55/truetime-android.git
 cd truetime-android
 
 # 构建项目
@@ -239,15 +231,12 @@ Apache 2.0 - 详见 [LICENSE](LICENSE) 文件
 
 ## 🌟 相关项目
 
-- [TrueTime for Swift](https://github.com/instacart/TrueTime.swift) - Swift 版本的 TrueTime
 - [kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime) - Kotlin 日期时间库
 
 ## 📞 支持
 
-- 📖 [文档](https://github.com/instacart/truetime-android/wiki)
-- 🐛 [问题报告](https://github.com/instacart/truetime-android/issues)
-- 💬 [讨论](https://github.com/instacart/truetime-android/discussions)
+项目目前处于开发阶段，欢迎提交问题和建议。
 
 ---
 
-**TrueTime Android** - 让您的应用始终显示准确的时间！⏰
+**RefTime Android** - 让您的应用始终显示准确的时间！⏰

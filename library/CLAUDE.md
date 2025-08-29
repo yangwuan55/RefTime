@@ -4,7 +4,7 @@
 
 ## 模块职责
 
-library 模块是 TrueTime Android 的核心库，提供现代化的 NTP 时间同步功能。完全基于 Kotlin 协程、Flow 和 kotlinx-datetime 构建，取代传统的 Java 时间 API。
+library 模块是 RefTime Android 的核心库，提供现代化的 NTP 时间同步功能。完全基于 Kotlin 协程、Flow 和 kotlinx-datetime 构建，取代传统的 Java 时间 API。
 
 ## 入口与启动
 

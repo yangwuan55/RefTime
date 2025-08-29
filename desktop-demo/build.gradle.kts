@@ -28,7 +28,7 @@ compose.desktop {
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb
             )
-            packageName = "TrueTime Desktop Demo"
+            packageName = "RefTime Desktop Demo"
             packageVersion = "1.0.0"
         }
     }

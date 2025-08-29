@@ -4,7 +4,7 @@
 
 ## 模块职责
 
-app 模块是 TrueTime Android 的示例应用，展示如何使用 library 模块提供的现代化时间同步功能。使用 Jetpack Compose 构建现代化 UI，演示响应式时间管理和状态处理。
+app 模块是 RefTime Android 的示例应用，展示如何使用 library 模块提供的现代化时间同步功能。使用 Jetpack Compose 构建现代化 UI，演示响应式时间管理和状态处理。
 
 ## 入口与启动
 

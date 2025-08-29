@@ -24,7 +24,7 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "TrueTime Kt"
+rootProject.name = "RefTime Kt"
 
 include(":app")
 

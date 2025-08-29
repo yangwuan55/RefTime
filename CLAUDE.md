@@ -1,14 +1,14 @@
-# TrueTime Android - 现代化时间同步库
+# RefTime Android - 现代化时间同步库
 
 ## 项目愿景
 
-TrueTime Android 是一个完全现代化的 NTP 客户端库，提供准确可靠的网络时间同步功能。该项目完全基于 Kotlin 协程、Flow 和 kotlinx-datetime 构建，取代了传统的 Java 时间 API，为 Android 应用提供类型安全、响应式的时间管理解决方案。
+RefTime Android 是一个完全现代化的 NTP 客户端库，提供准确可靠的网络时间同步功能。该项目完全基于 Kotlin 协程、Flow 和 kotlinx-datetime 构建，取代了传统的 Java 时间 API，为 Android 应用提供类型安全、响应式的时间管理解决方案。
 
 ## 架构总览
 
 ```mermaid
 graph TD
-    A["(根) TrueTime Android"] --> B["library"];
+    A["(根) RefTime Android"] --> B["library"];
     A --> C["app"];
     
     click B "./library/CLAUDE.md" "查看 library 模块文档"
