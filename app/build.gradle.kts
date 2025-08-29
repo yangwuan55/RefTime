@@ -47,6 +47,7 @@ android {
 
 dependencies {
   implementation(project(":library"))
+  implementation(project(":ui"))
 
   // Compose BOM
   implementation(platform("androidx.compose:compose-bom:2023.10.01"))
@@ -66,6 +67,9 @@ dependencies {
 
   // Kotlin
   implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.10")
+  
+  // Kotlinx DateTime
+  implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 
   // AndroidX Core
   implementation("androidx.appcompat:appcompat:1.6.1")

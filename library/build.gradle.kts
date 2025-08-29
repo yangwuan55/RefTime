@@ -1,52 +1,53 @@
-// remove this on upgrading android gradle plugin to 8
+// Kotlin Multiplatform 配置
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-  alias(libs.plugins.android.library)
-  alias(libs.plugins.kotlin.android)
+  kotlin("multiplatform")
   id("maven-publish")
 }
 
-android {
-  namespace = "com.milo.reftime"
-
-  compileSdk = libs.versions.compileSdk.get().toInt()
-
-  defaultConfig {
-    minSdk = libs.versions.minSdk.get().toInt()
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    aarMetadata { minCompileSdk = libs.versions.compileSdk.get().toInt() }
+kotlin {
+  // JVM 平台
+  jvm {
+    withJava()
+    compilations.all {
+      kotlinOptions {
+        jvmTarget = "17"
+      }
+    }
   }
 
-  buildTypes { getByName("release") { isMinifyEnabled = false } }
+  // 共享源代码集配置
+  sourceSets {
+    val commonMain by getting {
+      dependencies {
+        implementation(libs.kotlinx.coroutines.core)
+        implementation(libs.kotlinx.datetime)
+        implementation(libs.ktor.client.core)
+      }
+    }
 
-  buildFeatures { buildConfig = false }
+    val commonTest by getting {
+      dependencies {
+        implementation(kotlin("test"))
+      }
+    }
 
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    val jvmMain by getting {
+      dependencies {
+        implementation(libs.ktor.client.cio)
+      }
+    }
   }
-
-  kotlinOptions {
-    jvmTarget = "17"
-  }
-}
-
-dependencies {
-  api(libs.kotlinx.coroutines.core)
-  api(libs.kotlinx.datetime)
-  api(libs.ktor.client.core)
-  api(libs.ktor.client.okhttp)
-  api(libs.ktor.network)
 }
 
 afterEvaluate {
   publishing {
     publications {
-      register<MavenPublication>("release") {
+      // 多平台发布配置
+      withType<MavenPublication> {
         groupId = "com.instacart"
-        artifactId = "truetime"
         version = libs.versions.trueTime.get()
-        afterEvaluate { from(components["release"]) }
+        artifactId = "truetime"
       }
     }
   }

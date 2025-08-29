@@ -1,0 +1,78 @@
+{
+  "timestamp": "2025-08-28T16:52:33Z",
+  "rootPath": "/Users/ymr/github/truetime-android",
+  "modules": [
+    {
+      "name": "library",
+      "path": "library",
+      "language": "Kotlin",
+      "type": "Android Library",
+      "entryPoints": [
+        "src/main/java/com/milo/reftime/RefTime.kt",
+        "src/main/java/com/milo/reftime/config/RefTimeConfig.kt"
+      ],
+      "interfaces": [
+        "RefTime",
+        "RefTimeConfig"
+      ],
+      "dependencies": [
+        "kotlinx-coroutines-core",
+        "kotlinx-datetime",
+        "ktor-client-core",
+        "ktor-client-okhttp",
+        "ktor-network"
+      ],
+      "testExists": false,
+      "coverage": {
+        "filesScanned": 8,
+        "totalFiles": 8,
+        "percentage": 100,
+        "missing": ["tests"]
+      }
+    },
+    {
+      "name": "app",
+      "path": "app",
+      "language": "Kotlin",
+      "type": "Android Application",
+      "entryPoints": [
+        "src/main/java/com/milo/sample/App.kt",
+        "src/main/java/com/milo/sample/SampleActivity.kt"
+      ],
+      "interfaces": [
+        "SampleActivity",
+        "RefTimeApp"
+      ],
+      "dependencies": [
+        ":library",
+        "androidx-compose-bom",
+        "androidx-compose-ui",
+        "androidx-compose-material3",
+        "androidx-activity-compose"
+      ],
+      "testExists": false,
+      "coverage": {
+        "filesScanned": 2,
+        "totalFiles": 2,
+        "percentage": 100,
+        "missing": ["tests"]
+      }
+    }
+  ],
+  "totalFiles": 10,
+  "scannedFiles": 10,
+  "coveragePercentage": 100,
+  "ignoredStats": {
+    "build": 45,
+    "gradle": 4,
+    "resource": 32,
+    "other": 12
+  },
+  "truncated": false,
+  "nextSteps": [
+    "添加单元测试和集成测试",
+    "完善测试覆盖率",
+    "添加性能测试和基准测试",
+    "完善文档和示例代码"
+  ]
+}

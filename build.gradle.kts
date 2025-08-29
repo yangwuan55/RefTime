@@ -6,6 +6,14 @@ plugins {
   id("com.diffplug.spotless") version "6.20.0"
 }
 
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 spotless {
   kotlin {
     target("**/*.kt")

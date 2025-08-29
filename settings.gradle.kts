@@ -3,6 +3,15 @@ pluginManagement {
     google()
     mavenCentral()
     gradlePluginPortal()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+  }
+  
+  resolutionStrategy {
+    eachPlugin {
+      if (requested.id.namespace == "org.jetbrains.compose") {
+        useModule("org.jetbrains.compose:compose-gradle-plugin:${requested.version}")
+      }
+    }
   }
 }
 
@@ -20,3 +29,5 @@ rootProject.name = "TrueTime Kt"
 include(":app")
 
 include(":library")
+include(":desktop-demo")
+include(":ui")
